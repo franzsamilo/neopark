@@ -12,10 +12,35 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function AuthPage() {
-  function handleGoogleSignIn() {
-    console.log("Google sign in clicked");
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (session) {
+      router.push("/dashboard");
+    }
+  }, [session, router]);
+
+  const handleGoogleSignIn = () => {
+    signIn("google", { callbackUrl: "/dashboard" });
+  };
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 bg-gradient-to-r from-slate-600 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Car className="w-5 h-5 text-white" />
+          </div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
