@@ -89,18 +89,15 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
         const lots = await res.json();
         setParkingLots(Array.isArray(lots) ? lots : []);
         addParkingLotMarkers(Array.isArray(lots) ? lots : []);
-      } catch (e) {
+      } catch {
         setParkingLots([]);
         addParkingLotMarkers([]);
       }
     });
 
     map.current.on("click", (e) => {
-      console.log("Map clicked at:", e.lngLat);
-
       if (isCreatingLotRef.current) {
         const { lng, lat } = e.lngLat;
-        console.log("Setting clicked location:", { lat, lng });
         setClickedLocation({ lat, lng });
       }
     });
@@ -180,7 +177,6 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
     window.deleteParkingLot = (id: string) => {
       if (confirm("Are you sure you want to delete this parking lot?")) {
         setParkingLots((prev) => prev.filter((lot) => lot.id !== id));
-        console.log("Deleting parking lot:", id);
       }
     };
 
@@ -208,7 +204,6 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
       if (!response.ok) throw new Error("Failed to create parking lot");
       const createdLot = await response.json();
       setParkingLots((prev) => [...prev, createdLot]);
-      console.log("Created parking lot:", createdLot);
 
       setNewLotData({ name: "", address: "", description: "" });
       setClickedLocation(null);
@@ -218,8 +213,8 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
       addParkingLotMarkers(
         parkingLots.map((lot) => (lot.id === createdLot.id ? createdLot : lot))
       );
-    } catch (error) {
-      console.error("Error creating parking lot:", error);
+    } catch {
+      // Optionally handle error
     }
   };
 
@@ -246,8 +241,6 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
         prev.map((lot) => (lot.id === editingLot.id ? updatedLot : lot))
       );
 
-      console.log("Updating parking lot:", updatedLot);
-
       setNewLotData({ name: "", address: "", description: "" });
       setClickedLocation(null);
       setIsCreatingLot(false);
@@ -256,8 +249,8 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
       addParkingLotMarkers(
         parkingLots.map((lot) => (lot.id === editingLot.id ? updatedLot : lot))
       );
-    } catch (error) {
-      console.error("Error updating parking lot:", error);
+    } catch {
+      // Optionally handle error
     }
   };
 
