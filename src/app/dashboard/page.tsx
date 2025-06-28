@@ -96,7 +96,7 @@ export default function DashboardPage() {
               </span>
             </h1>
             <p className="text-slate-600">
-              Here&apos;s your real-time parking intelligence dashboard
+              Here&apos;s your real-time parking intelligence assistant
             </p>
           </motion.div>
 
