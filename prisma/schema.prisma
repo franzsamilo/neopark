@@ -88,7 +88,7 @@ model ParkingSpot {
   lastUpdated DateTime    @default(now())
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  
+
   // Sensor data fields
   deviceId    String?     // Ultrasonic sensor device ID
   sensorReadings SensorReading[]

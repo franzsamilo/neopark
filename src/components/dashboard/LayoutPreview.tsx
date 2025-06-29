@@ -15,17 +15,11 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { getSpotColor } from "@/lib/sensor-utils";
-import { SensorReading } from "@/constants/types/parking";
 
 interface LayoutPreviewProps {
   parkingLot: ParkingLot;
   onClose: () => void;
 }
-
-type LayoutElementWithReadings = LayoutElement & {
-  sensorReadings?: SensorReading[];
-  isActive?: boolean;
-};
 
 export default function LayoutPreview({
   parkingLot,
@@ -100,13 +94,9 @@ export default function LayoutPreview({
 
   const getElementColor = (element: LayoutElement) => {
     if (element.elementType === LayoutElementType.PARKING_SPACE) {
-      const e = element as LayoutElementWithReadings;
-      const readings = e.sensorReadings ?? [];
-      const latestReading = readings.length > 0 ? readings[0] : null;
-      const isOccupied = latestReading
-        ? latestReading.isOccupied
-        : !!(element.properties as Record<string, unknown>)?.isOccupied;
-      const isActive = typeof e.isActive === "boolean" ? e.isActive : true;
+      const properties = element.properties as Record<string, unknown> | null;
+      const isOccupied = properties?.isOccupied === true;
+      const isActive = properties?.isActive !== false;
       return getSpotColor(isOccupied, isActive);
     }
 
@@ -132,10 +122,8 @@ export default function LayoutPreview({
 
   const getElementLabel = (element: LayoutElement) => {
     if (element.elementType === LayoutElementType.PARKING_SPACE) {
-      return (
-        ((element.properties as Record<string, unknown>)?.spotId as string) ||
-        "P"
-      );
+      const properties = element.properties as Record<string, unknown> | null;
+      return (properties?.spotId as string) || "P";
     }
     switch (element.elementType) {
       case LayoutElementType.DRIVING_PATH:
@@ -145,10 +133,8 @@ export default function LayoutPreview({
       case LayoutElementType.EXIT:
         return "OUT";
       case LayoutElementType.SIGN:
-        return (
-          ((element.properties as Record<string, unknown>)?.text as string) ||
-          "S"
-        );
+        const properties = element.properties as Record<string, unknown> | null;
+        return (properties?.text as string) || "S";
       case LayoutElementType.LIGHTING:
         return "💡";
       case LayoutElementType.VEGETATION:
@@ -163,9 +149,11 @@ export default function LayoutPreview({
   const parkingSpaces = layoutElements.filter(
     (element) => element.elementType === LayoutElementType.PARKING_SPACE
   );
-  const availableSpaces = parkingSpaces.filter(
-    (element) => !(element.properties as Record<string, unknown>)?.isOccupied
-  );
+
+  const availableSpaces = parkingSpaces.filter((element) => {
+    const properties = element.properties as Record<string, unknown> | null;
+    return properties?.isOccupied !== true;
+  });
 
   const handleSpotClick = (element: LayoutElement) => {
     if (element.elementType === LayoutElementType.PARKING_SPACE) {
@@ -333,8 +321,7 @@ export default function LayoutPreview({
                       Spot ID
                     </label>
                     <div className="text-lg font-bold text-gray-800">
-                      {((selectedSpot.properties as Record<string, unknown>)
-                        ?.spotId as string) || "N/A"}
+                      {getElementLabel(selectedSpot)}
                     </div>
                   </div>
                   <div>
@@ -342,14 +329,11 @@ export default function LayoutPreview({
                       Status
                     </label>
                     {(() => {
-                      const e = selectedSpot as LayoutElementWithReadings;
-                      const readings = e.sensorReadings ?? [];
-                      const latestReading =
-                        readings.length > 0 ? readings[0] : null;
-                      const isOccupied = latestReading
-                        ? latestReading.isOccupied
-                        : !!(selectedSpot.properties as Record<string, unknown>)
-                            ?.isOccupied;
+                      const properties = selectedSpot.properties as Record<
+                        string,
+                        unknown
+                      > | null;
+                      const isOccupied = properties?.isOccupied === true;
                       return (
                         <div
                           className={`text-lg font-bold ${
@@ -361,37 +345,20 @@ export default function LayoutPreview({
                       );
                     })()}
                   </div>
-                  {(() => {
-                    const e = selectedSpot as LayoutElementWithReadings;
-                    const readings = e.sensorReadings ?? [];
-                    const latestReading =
-                      readings.length > 0 ? readings[0] : null;
-                    if (latestReading) {
-                      return (
-                        <>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Last Distance (cm)
-                            </label>
-                            <div className="text-lg text-gray-800">
-                              {latestReading.distance}
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Last Updated
-                            </label>
-                            <div className="text-lg text-gray-800">
-                              {new Date(
-                                latestReading.timestamp
-                              ).toLocaleString()}
-                            </div>
-                          </div>
-                        </>
-                      );
-                    }
-                    return null;
-                  })()}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Sensor Status
+                    </label>
+                    <div className="text-lg text-gray-800">
+                      No sensor attached
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Updated
+                    </label>
+                    <div className="text-lg text-gray-800">Manual entry</div>
+                  </div>
                 </div>
               </div>
             )}
