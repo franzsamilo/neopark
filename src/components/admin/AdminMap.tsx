@@ -213,9 +213,7 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
       addParkingLotMarkers(
         parkingLots.map((lot) => (lot.id === createdLot.id ? createdLot : lot))
       );
-    } catch {
-      // Optionally handle error
-    }
+    } catch {}
   };
 
   const handleUpdateLot = async () => {
@@ -249,9 +247,7 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
       addParkingLotMarkers(
         parkingLots.map((lot) => (lot.id === editingLot.id ? updatedLot : lot))
       );
-    } catch {
-      // Optionally handle error
-    }
+    } catch {}
   };
 
   useEffect(() => {
