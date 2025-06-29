@@ -18,3 +18,16 @@ export enum MapView {
   SATELLITE = "satellite",
   HYBRID = "hybrid",
 }
+
+export enum LayoutElementType {
+  PARKING_SPACE = "PARKING_SPACE",
+  DRIVING_PATH = "DRIVING_PATH",
+  ENTRANCE = "ENTRANCE",
+  EXIT = "EXIT",
+  BARRIER = "BARRIER",
+  SIGN = "SIGN",
+  LIGHTING = "LIGHTING",
+  VEGETATION = "VEGETATION",
+  BUILDING = "BUILDING",
+  OTHER = "OTHER",
+}

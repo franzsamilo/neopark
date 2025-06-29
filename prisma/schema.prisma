@@ -68,6 +68,7 @@ model ParkingLot {
   availableSpots Int
   isActive       Boolean       @default(true)
   parkingSpots   ParkingSpot[]
+  layoutElements LayoutElement[]
   creatorId      String?       @db.ObjectId
   creator        User?         @relation("UserCreatedLots", fields: [creatorId], references: [id])
   layoutData     Json?         // For future layout editor
@@ -91,9 +92,33 @@ model ParkingSpot {
   @@unique([parkingLotId, spotId])
 }
 
+model LayoutElement {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  parkingLot  ParkingLot    @relation(fields: [parkingLotId], references: [id], onDelete: Cascade)
+  parkingLotId String       @db.ObjectId
+  elementType LayoutElementType
+  position    Position      // x, y coordinates on the grid
+  size        Size          // width, height for scalable elements
+  rotation    Float         @default(0) // rotation in degrees
+  properties  Json?         // Additional properties for different element types
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
 type Coordinates {
   lat Float
   lng Float
+}
+
+type Position {
+  x Float
+  y Float
+}
+
+type Size {
+  width  Float
+  height Float
 }
 
 enum UserRole {
@@ -109,4 +134,17 @@ enum SpotType {
   MOTORCYCLE
   COMPACT
   RESERVED
+}
+
+enum LayoutElementType {
+  PARKING_SPACE
+  DRIVING_PATH
+  ENTRANCE
+  EXIT
+  BARRIER
+  SIGN
+  LIGHTING
+  VEGETATION
+  BUILDING
+  OTHER
 }

@@ -53,8 +53,34 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const lots = await prisma.parkingLot.findMany();
-    return NextResponse.json(lots);
+    const lots = await prisma.parkingLot.findMany({
+      include: {
+        parkingSpots: true,
+      },
+    });
+
+    const processedLots = lots.map((lot) => {
+      let layoutElements: Record<string, unknown>[] = [];
+
+      if (lot.layoutData) {
+        try {
+          layoutElements = Array.isArray(lot.layoutData)
+            ? lot.layoutData
+            : JSON.parse(lot.layoutData as string);
+        } catch (error) {
+          console.error("Error parsing layout data for lot:", lot.id, error);
+          layoutElements = [];
+        }
+      }
+
+      return {
+        ...lot,
+        layoutElements,
+        layoutData: lot.layoutData,
+      };
+    });
+
+    return NextResponse.json(processedLots);
   } catch (error) {
     console.error(error);
     return NextResponse.json(

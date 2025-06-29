@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import AdminMap from "@/components/admin/AdminMap";
 import {
   Settings,
@@ -15,6 +16,7 @@ import {
 import type { ParkingLot } from "@/constants/types/parking";
 
 export default function AdminPage() {
+  const router = useRouter();
   const [isCreatingLayout, setIsCreatingLayout] = useState(false);
   const [selectedLotId, setSelectedLotId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("map");
@@ -25,6 +27,13 @@ export default function AdminPage() {
     setSelectedLotId(lotId);
     setIsCreatingLayout(true);
     console.log("Creating parking layout for lot:", lotId);
+  };
+
+  const handleOpenLayoutEditor = () => {
+    if (selectedLotId) {
+      setIsCreatingLayout(false);
+      router.push(`/createParkingLayout?id=${selectedLotId}`);
+    }
   };
 
   useEffect(() => {
@@ -265,10 +274,7 @@ export default function AdminPage() {
                 Close
               </button>
               <button
-                onClick={() => {
-                  setIsCreatingLayout(false);
-                  console.log("Opening layout editor for lot:", selectedLotId);
-                }}
+                onClick={handleOpenLayoutEditor}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold"
               >
                 Open Editor
