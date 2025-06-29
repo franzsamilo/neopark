@@ -1,5 +1,22 @@
 import { SpotType, LayoutElementType } from "../enums/parking";
 
+export interface UltrasonicDataMessage {
+  type: "ultrasonicData"; // Now explicitly typed
+  distance: number;
+  deviceId?: string;
+  timestamp?: number;
+}
+
+export interface SensorReading {
+  id: string;
+  parkingSpotId: string;
+  distance: number;
+  deviceId?: string;
+  timestamp: Date;
+  isOccupied: boolean;
+  createdAt: Date;
+}
+
 export interface ParkingLot {
   id: string;
   name: string;
@@ -27,6 +44,10 @@ export interface ParkingSpot {
   lastUpdated: Date;
   createdAt: Date;
   updatedAt: Date;
+  // Sensor data fields
+  deviceId?: string;
+  lastSensorReading?: SensorReading;
+  sensorHistory?: SensorReading[];
 }
 
 export interface LayoutElement {

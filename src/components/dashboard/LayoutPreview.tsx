@@ -14,11 +14,18 @@ import {
   X,
   RefreshCw,
 } from "lucide-react";
+import { getSpotColor } from "@/lib/sensor-utils";
+import { SensorReading } from "@/constants/types/parking";
 
 interface LayoutPreviewProps {
   parkingLot: ParkingLot;
   onClose: () => void;
 }
+
+type LayoutElementWithReadings = LayoutElement & {
+  sensorReadings?: SensorReading[];
+  isActive?: boolean;
+};
 
 export default function LayoutPreview({
   parkingLot,
@@ -93,9 +100,14 @@ export default function LayoutPreview({
 
   const getElementColor = (element: LayoutElement) => {
     if (element.elementType === LayoutElementType.PARKING_SPACE) {
-      const isOccupied = (element.properties as Record<string, unknown>)
-        ?.isOccupied;
-      return isOccupied ? "bg-red-500" : "bg-green-500";
+      const e = element as LayoutElementWithReadings;
+      const readings = e.sensorReadings ?? [];
+      const latestReading = readings.length > 0 ? readings[0] : null;
+      const isOccupied = latestReading
+        ? latestReading.isOccupied
+        : !!(element.properties as Record<string, unknown>)?.isOccupied;
+      const isActive = typeof e.isActive === "boolean" ? e.isActive : true;
+      return getSpotColor(isOccupied, isActive);
     }
 
     switch (element.elementType) {
@@ -119,12 +131,13 @@ export default function LayoutPreview({
   };
 
   const getElementLabel = (element: LayoutElement) => {
+    if (element.elementType === LayoutElementType.PARKING_SPACE) {
+      return (
+        ((element.properties as Record<string, unknown>)?.spotId as string) ||
+        "P"
+      );
+    }
     switch (element.elementType) {
-      case LayoutElementType.PARKING_SPACE:
-        return (
-          ((element.properties as Record<string, unknown>)?.spotId as string) ||
-          "P"
-        );
       case LayoutElementType.DRIVING_PATH:
         return "→";
       case LayoutElementType.ENTRANCE:
@@ -328,20 +341,57 @@ export default function LayoutPreview({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Status
                     </label>
-                    <div
-                      className={`text-lg font-bold ${
-                        (selectedSpot.properties as Record<string, unknown>)
-                          ?.isOccupied
-                          ? "text-red-600"
-                          : "text-green-600"
-                      }`}
-                    >
-                      {(selectedSpot.properties as Record<string, unknown>)
-                        ?.isOccupied
-                        ? "Occupied"
-                        : "Available"}
-                    </div>
+                    {(() => {
+                      const e = selectedSpot as LayoutElementWithReadings;
+                      const readings = e.sensorReadings ?? [];
+                      const latestReading =
+                        readings.length > 0 ? readings[0] : null;
+                      const isOccupied = latestReading
+                        ? latestReading.isOccupied
+                        : !!(selectedSpot.properties as Record<string, unknown>)
+                            ?.isOccupied;
+                      return (
+                        <div
+                          className={`text-lg font-bold ${
+                            isOccupied ? "text-red-600" : "text-green-600"
+                          }`}
+                        >
+                          {isOccupied ? "Occupied" : "Available"}
+                        </div>
+                      );
+                    })()}
                   </div>
+                  {(() => {
+                    const e = selectedSpot as LayoutElementWithReadings;
+                    const readings = e.sensorReadings ?? [];
+                    const latestReading =
+                      readings.length > 0 ? readings[0] : null;
+                    if (latestReading) {
+                      return (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Last Distance (cm)
+                            </label>
+                            <div className="text-lg text-gray-800">
+                              {latestReading.distance}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Last Updated
+                            </label>
+                            <div className="text-lg text-gray-800">
+                              {new Date(
+                                latestReading.timestamp
+                              ).toLocaleString()}
+                            </div>
+                          </div>
+                        </>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
             )}

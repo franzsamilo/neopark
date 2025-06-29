@@ -88,6 +88,10 @@ model ParkingSpot {
   lastUpdated DateTime    @default(now())
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  
+  // Sensor data fields
+  deviceId    String?     // Ultrasonic sensor device ID
+  sensorReadings SensorReading[]
 
   @@unique([parkingLotId, spotId])
 }
@@ -147,4 +151,16 @@ enum LayoutElementType {
   VEGETATION
   BUILDING
   OTHER
+}
+
+// New model for sensor readings
+model SensorReading {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  parkingSpot ParkingSpot @relation(fields: [parkingSpotId], references: [id], onDelete: Cascade)
+  parkingSpotId String    @db.ObjectId
+  distance    Float       // Distance in cm
+  deviceId    String?     // Device ID that sent the reading
+  timestamp   DateTime    @default(now())
+  isOccupied  Boolean     // Calculated occupancy status
+  createdAt   DateTime    @default(now())
 }
