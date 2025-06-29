@@ -162,8 +162,8 @@ export default function LayoutPreview({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-6 max-w-4xl w-full max-h-[90vh] overflow-hidden">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
@@ -176,16 +176,18 @@ export default function LayoutPreview({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">
               {parkingLot.name} - Layout Preview
             </h2>
-            <p className="text-gray-600">{parkingLot.address}</p>
+            <p className="text-gray-600 text-sm sm:text-base truncate">
+              {parkingLot.address}
+            </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 ml-4 flex-shrink-0">
             <button
               onClick={refreshLayout}
               disabled={refreshing}
@@ -207,130 +209,143 @@ export default function LayoutPreview({
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-6">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {availableSpaces.length}
-              </div>
-              <div className="text-sm text-gray-600 font-medium">Available</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-800">
-                {parkingSpaces.length}
-              </div>
-              <div className="text-sm text-gray-600 font-medium">
-                Total Spots
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">
-                {parkingSpaces.length - availableSpaces.length}
-              </div>
-              <div className="text-sm text-gray-600 font-medium">Occupied</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gray-50 rounded-xl mb-6 overflow-auto max-h-96 flex justify-center items-center">
-          <div className="relative w-[800px] h-[400px] bg-white rounded-lg border-2 border-gray-200 mx-auto">
-            {layoutElements.length === 0 ? (
-              <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Car className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-lg font-medium">
-                    No layout data available
-                  </p>
-                  <p className="text-sm">
-                    Layout will be available once configured by admin
-                  </p>
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-6">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                  {availableSpaces.length}
+                </div>
+                <div className="text-xs sm:text-sm text-gray-600 font-medium">
+                  Available
                 </div>
               </div>
-            ) : (
-              layoutElements.map((element) => {
-                const Icon = getElementIcon(element.elementType);
-                const isSelected = selectedSpot?.id === element.id;
+              <div>
+                <div className="text-xl sm:text-2xl font-bold text-gray-800">
+                  {parkingSpaces.length}
+                </div>
+                <div className="text-xs sm:text-sm text-gray-600 font-medium">
+                  Total Spots
+                </div>
+              </div>
+              <div>
+                <div className="text-xl sm:text-2xl font-bold text-red-600">
+                  {parkingSpaces.length - availableSpaces.length}
+                </div>
+                <div className="text-xs sm:text-sm text-gray-600 font-medium">
+                  Occupied
+                </div>
+              </div>
+            </div>
+          </div>
 
-                return (
-                  <div
-                    key={element.id}
-                    className={`absolute border-2 cursor-pointer transition-all ${
-                      isSelected
-                        ? "border-blue-500 shadow-lg z-10"
-                        : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    style={{
-                      left: element.position.x,
-                      top: element.position.y,
-                      width: element.size.width,
-                      height: element.size.height,
-                      transform: `rotate(${element.rotation}deg)`,
-                    }}
-                    onClick={() => handleSpotClick(element)}
-                  >
+          <div className="bg-gray-50 rounded-xl mb-6 overflow-auto">
+            <div
+              className="relative bg-white rounded-lg border-2 border-gray-200 mx-auto"
+              style={{
+                width: "min(800px, 100%)",
+                height: "min(400px, 60vh)",
+                minHeight: "300px",
+              }}
+            >
+              {layoutElements.length === 0 ? (
+                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                  <div className="text-center p-4">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Car className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+                    </div>
+                    <p className="text-base sm:text-lg font-medium">
+                      No layout data available
+                    </p>
+                    <p className="text-xs sm:text-sm">
+                      Layout will be available once configured by admin
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                layoutElements.map((element) => {
+                  const Icon = getElementIcon(element.elementType);
+                  const isSelected = selectedSpot?.id === element.id;
+
+                  return (
                     <div
-                      className={`w-full h-full flex items-center justify-center text-white font-bold text-xs ${getElementColor(
-                        element
-                      )}`}
+                      key={element.id}
+                      className={`absolute border-2 cursor-pointer transition-all ${
+                        isSelected
+                          ? "border-blue-500 shadow-lg z-10"
+                          : "border-gray-300 hover:border-gray-400"
+                      }`}
+                      style={{
+                        left: element.position.x,
+                        top: element.position.y,
+                        width: element.size.width,
+                        height: element.size.height,
+                        transform: `rotate(${element.rotation}deg)`,
+                      }}
+                      onClick={() => handleSpotClick(element)}
                     >
-                      {element.elementType ===
-                      LayoutElementType.PARKING_SPACE ? (
-                        <div className="text-center">
-                          <Icon className="w-4 h-4 mx-auto mb-1" />
-                          <div className="text-xs">
-                            {getElementLabel(element)}
+                      <div
+                        className={`w-full h-full flex items-center justify-center text-white font-bold text-xs ${getElementColor(
+                          element
+                        )}`}
+                      >
+                        {element.elementType ===
+                        LayoutElementType.PARKING_SPACE ? (
+                          <div className="text-center">
+                            <Icon className="w-3 h-3 sm:w-4 sm:h-4 mx-auto mb-1" />
+                            <div className="text-xs">
+                              {getElementLabel(element)}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <Icon className="w-4 h-4" />
-                      )}
+                        ) : (
+                          <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {selectedSpot &&
+            selectedSpot.elementType === LayoutElementType.PARKING_SPACE && (
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                  Parking Spot Details
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Spot ID
+                    </label>
+                    <div className="text-lg font-bold text-gray-800">
+                      {((selectedSpot.properties as Record<string, unknown>)
+                        ?.spotId as string) || "N/A"}
                     </div>
                   </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {selectedSpot &&
-          selectedSpot.elementType === LayoutElementType.PARKING_SPACE && (
-            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                Parking Spot Details
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Spot ID
-                  </label>
-                  <div className="text-lg font-bold text-gray-800">
-                    {((selectedSpot.properties as Record<string, unknown>)
-                      ?.spotId as string) || "N/A"}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <div
-                    className={`text-lg font-bold ${
-                      (selectedSpot.properties as Record<string, unknown>)
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <div
+                      className={`text-lg font-bold ${
+                        (selectedSpot.properties as Record<string, unknown>)
+                          ?.isOccupied
+                          ? "text-red-600"
+                          : "text-green-600"
+                      }`}
+                    >
+                      {(selectedSpot.properties as Record<string, unknown>)
                         ?.isOccupied
-                        ? "text-red-600"
-                        : "text-green-600"
-                    }`}
-                  >
-                    {(selectedSpot.properties as Record<string, unknown>)
-                      ?.isOccupied
-                      ? "Occupied"
-                      : "Available"}
+                        ? "Occupied"
+                        : "Available"}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+        </div>
       </div>
     </div>
   );
