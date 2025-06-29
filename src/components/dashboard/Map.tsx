@@ -29,7 +29,6 @@ export default function Map({
   } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
 
-  // Get user's current location
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       setIsLocating(true);
@@ -38,7 +37,6 @@ export default function Map({
           const { latitude, longitude } = position.coords;
           setUserLocation({ lat: latitude, lng: longitude });
 
-          // Center map on user location if map is loaded
           if (map.current) {
             map.current.flyTo({
               center: [longitude, latitude] as [number, number],
@@ -52,7 +50,6 @@ export default function Map({
         (error) => {
           console.error("Error getting location:", error);
           setIsLocating(false);
-          // Fallback to default location if geolocation fails
           if (map.current) {
             map.current.flyTo({
               center: [-74.5, 40] as [number, number],
@@ -73,7 +70,7 @@ export default function Map({
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/streets-v12",
-      center: [-74.5, 40], // Default center, will be updated when user location is obtained
+      center: [-74.5, 40],
       zoom: 12,
       antialias: true,
       pitch: 30,
@@ -90,11 +87,9 @@ export default function Map({
     map.current.on("load", () => {
       setIsMapLoaded(true);
       loadParkingLots();
-      // Get user location when map loads
       getCurrentLocation();
     });
 
-    // Add window functions for popup interactions
     (window as Window).selectParkingLot = (id: string) => {
       const lot = parkingLots.find((l) => l.id === id);
       if (lot) {
@@ -116,7 +111,6 @@ export default function Map({
     };
   }, []);
 
-  // Update window functions when callbacks change (but not when parkingLots change)
   useEffect(() => {
     (window as Window).selectParkingLot = (id: string) => {
       const lot = parkingLots.find((l) => l.id === id);
@@ -133,7 +127,6 @@ export default function Map({
     };
   }, [onParkingLotSelect, onViewLayout, parkingLots]);
 
-  // Polling for real-time updates (every 30 seconds)
   useEffect(() => {
     if (!isMapLoaded) return;
 
@@ -147,7 +140,6 @@ export default function Map({
   useEffect(() => {
     if (!map.current || !searchQuery.trim()) return;
 
-    // Search through parking lots in the database instead of using Mapbox geocoding
     const filteredLots = parkingLots.filter(
       (lot) =>
         lot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -155,7 +147,6 @@ export default function Map({
     );
 
     if (filteredLots.length > 0) {
-      // Center on the first matching parking lot
       const firstLot = filteredLots[0];
       map.current.flyTo({
         center: [firstLot.coordinates.lng, firstLot.coordinates.lat] as [
@@ -198,11 +189,9 @@ export default function Map({
       markerEl.className = "parking-lot-marker";
       markerEl.setAttribute("data-lot-id", lot.id);
 
-      // Calculate dynamic counts from layout data
       let totalSpots = lot.totalSpots;
       let availableSpots = lot.availableSpots;
 
-      // If layout data exists, calculate from layout elements
       if (lot.layoutElements && Array.isArray(lot.layoutElements)) {
         const parkingSpaces = lot.layoutElements.filter(
           (element: LayoutElement) => element.elementType === "PARKING_SPACE"
@@ -329,15 +318,12 @@ export default function Map({
     getCurrentLocation();
   };
 
-  // Add a marker for the user's location on the map
   useEffect(() => {
     if (!map.current || !userLocation) return;
 
-    // Remove any existing user location marker
     const existing = document.getElementById("user-location-marker");
     if (existing) existing.remove();
 
-    // Create a custom marker element
     const markerEl = document.createElement("div");
     markerEl.id = "user-location-marker";
     markerEl.style.width = "22px";
@@ -358,18 +344,15 @@ export default function Map({
       </style>
     `;
 
-    // Add the marker to the map
     new mapboxgl.Marker(markerEl)
       .setLngLat([userLocation.lng, userLocation.lat])
       .addTo(map.current!);
 
-    // Clean up on unmount or location change
     return () => {
       markerEl.remove();
     };
   }, [userLocation]);
 
-  // Fly to selectedLot and open its popup
   useEffect(() => {
     if (!map.current || !selectedLot) return;
     map.current.flyTo({
@@ -377,7 +360,6 @@ export default function Map({
       zoom: 16,
       duration: 1200,
     });
-    // Try to open the popup for the selected lot
     setTimeout(() => {
       const marker = document.querySelector(
         `.parking-lot-marker[data-lot-id='${selectedLot.id}']`

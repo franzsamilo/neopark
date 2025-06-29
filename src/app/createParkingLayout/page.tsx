@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -23,7 +23,7 @@ import {
 import { ParkingLot, LayoutElement, Size } from "@/constants/types/parking";
 import { SpotType, LayoutElementType } from "@/constants/enums/parking";
 
-export default function CreateParkingLayoutPage() {
+function CreateParkingLayoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const parkingLotId = searchParams.get("id");
@@ -969,4 +969,12 @@ function getElementLabel(element: LayoutElement): string {
     default:
       return "?";
   }
+}
+
+export default function CreateParkingLayoutPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateParkingLayoutContent />
+    </Suspense>
+  );
 }

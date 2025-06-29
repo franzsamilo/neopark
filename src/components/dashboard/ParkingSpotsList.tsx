@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   MapPin,
   Car,
-  Star,
   Navigation,
   ChevronUp,
   ChevronDown,
@@ -31,7 +30,6 @@ export default function ParkingSpotsList({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Load parking lots from API
   useEffect(() => {
     const loadParkingLots = async () => {
       setIsLoading(true);
@@ -51,12 +49,10 @@ export default function ParkingSpotsList({
 
     loadParkingLots();
 
-    // Set up polling for real-time updates (every 30 seconds)
     const interval = setInterval(loadParkingLots, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Filter parking lots based on search query
   const filteredLots = parkingLots.filter(
     (lot) =>
       lot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -78,21 +74,15 @@ export default function ParkingSpotsList({
   };
 
   const calculateDistance = () => {
-    const mockDistance = Math.random() * 2 + 0.1;
-    return `${mockDistance.toFixed(1)} km`;
+    return `${(0.5 + Math.random() * 2).toFixed(1)} km`;
   };
 
   const calculateEstimatedTime = (distance: string) => {
     const distanceNum = parseFloat(distance);
-    const timeMinutes = Math.round(distanceNum * 3 + Math.random() * 5); // 3 min/km + random
+    const timeMinutes = Math.round(distanceNum * 3 + Math.random() * 5);
     return `${timeMinutes} min`;
   };
 
-  const getMockRating = () => {
-    return (3.5 + Math.random() * 1.5).toFixed(1); // 3.5-5.0 rating
-  };
-
-  // Handle touch events for better mobile scroll
   const handleTouchStart = () => {
     setIsDragging(true);
   };
@@ -103,9 +93,7 @@ export default function ParkingSpotsList({
 
   return (
     <div className="bg-white rounded-t-3xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out">
-      {/* Enhanced Header with Better Mobile UX */}
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 sm:px-6 py-4 relative">
-        {/* Improved Drag Handle */}
         <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-16 h-1.5 bg-white/40 rounded-full"></div>
 
         <div className="flex items-center justify-between mt-3">
@@ -137,7 +125,6 @@ export default function ParkingSpotsList({
           </div>
         </div>
 
-        {/* Search Indicator */}
         {searchQuery && (
           <div className="mt-3 flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
             <Search className="w-4 h-4 text-blue-100" />
@@ -148,7 +135,6 @@ export default function ParkingSpotsList({
         )}
       </div>
 
-      {/* Enhanced Scrollable Parking Spots List */}
       <div
         className={`transition-all duration-300 ease-in-out ${
           isExpanded ? "max-h-[90vh] sm:max-h-[80vh]" : "max-h-80 sm:max-h-96"
@@ -189,7 +175,6 @@ export default function ParkingSpotsList({
               {filteredLots.map((lot) => {
                 const distance = calculateDistance();
                 const estimatedTime = calculateEstimatedTime(distance);
-                const rating = getMockRating();
                 const isSelected = selectedLot && lot.id === selectedLot.id;
 
                 return (
@@ -210,7 +195,6 @@ export default function ParkingSpotsList({
                     }}
                   >
                     <div className="p-4">
-                      {/* Enhanced Header Row */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-800 text-base sm:text-lg mb-1 truncate">
@@ -226,11 +210,6 @@ export default function ParkingSpotsList({
                             <span className="text-gray-500">
                               {estimatedTime}
                             </span>
-                            <span className="text-gray-300">•</span>
-                            <div className="flex items-center">
-                              <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-1" />
-                              <span className="text-gray-600">{rating}</span>
-                            </div>
                           </div>
                         </div>
                         <div className="text-right ml-3 flex-shrink-0">
@@ -243,7 +222,6 @@ export default function ParkingSpotsList({
                         </div>
                       </div>
 
-                      {/* Enhanced Availability Bar */}
                       <div className="mb-4">
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-xs sm:text-sm font-medium text-gray-700">
@@ -278,7 +256,6 @@ export default function ParkingSpotsList({
                         </div>
                       </div>
 
-                      {/* Enhanced Action Buttons */}
                       <div className="flex space-x-2">
                         <button
                           className="flex-1 bg-blue-500 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-blue-600 active:bg-blue-700 transition-colors flex items-center justify-center text-sm"
