@@ -14,12 +14,20 @@ import {
   X,
   RefreshCw,
 } from "lucide-react";
-import { getSpotColor } from "@/lib/sensor-utils";
 
 interface LayoutPreviewProps {
   parkingLot: ParkingLot;
   onClose: () => void;
 }
+
+// Local fallback function to avoid dependency on sensor-utils
+const getSpotColor = (
+  isOccupied: boolean,
+  isActive: boolean = true
+): string => {
+  if (!isActive) return "bg-gray-400"; // Inactive spots
+  return isOccupied ? "bg-red-500" : "bg-green-500"; // Occupied vs Available
+};
 
 export default function LayoutPreview({
   parkingLot,
