@@ -20,7 +20,8 @@
     "next-auth": "^4.24.11",
     "prisma": "^6.10.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "reconnecting-websocket": "^4.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
