@@ -14,6 +14,7 @@ import {
   X,
   RefreshCw,
 } from "lucide-react";
+import useWebsocketNeo from "@/hooks/useWebsocketNeo";
 
 interface LayoutPreviewProps {
   parkingLot: ParkingLot;
@@ -28,6 +29,7 @@ export default function LayoutPreview({
   const [layoutElements, setLayoutElements] = useState<LayoutElement[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { lastData } = useWebsocketNeo();
 
   useEffect(() => {
     const loadLayoutData = async () => {
@@ -53,6 +55,44 @@ export default function LayoutPreview({
 
     loadLayoutData();
   }, [parkingLot.id]);
+
+  // Real-time IoT update effect
+  useEffect(() => {
+    if (!lastData) return;
+    setLayoutElements((prevElements) => {
+      let updated = false;
+      const newElements = prevElements.map((element) => {
+        if (
+          element.elementType === LayoutElementType.PARKING_SPACE &&
+          (element.properties as Record<string, unknown>)?.deviceId ===
+            lastData.deviceId
+        ) {
+          const threshold =
+            ((element.properties as Record<string, unknown>)
+              ?.sensorThreshold as number) || 50;
+          const isOccupied =
+            lastData.distance > 0 && lastData.distance < threshold;
+          if (
+            (element.properties as Record<string, unknown>)?.isOccupied !==
+            isOccupied
+          ) {
+            updated = true;
+            return {
+              ...element,
+              properties: {
+                ...element.properties,
+                isOccupied,
+                lastDistance: lastData.distance,
+                lastUpdated: lastData.timestamp,
+              },
+            };
+          }
+        }
+        return element;
+      });
+      return updated ? newElements : prevElements;
+    });
+  }, [lastData]);
 
   const refreshLayout = async () => {
     setRefreshing(true);

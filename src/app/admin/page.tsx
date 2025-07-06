@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminMap from "@/components/admin/AdminMap";
+import IoTDeviceManager from "@/components/admin/IoTDeviceManager";
 import {
   Settings,
   BarChart3,
@@ -12,6 +13,7 @@ import {
   MapPin,
   Edit,
   Trash2,
+  Wifi,
 } from "lucide-react";
 import type { ParkingLot } from "@/constants/types/parking";
 
@@ -22,6 +24,10 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("map");
   const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
   const [loadingLots, setLoadingLots] = useState(false);
+  const [showIoTManager, setShowIoTManager] = useState(false);
+  const [selectedLotForIoT, setSelectedLotForIoT] = useState<ParkingLot | null>(
+    null
+  );
 
   const handleParkingLayoutCreate = (lotId: string) => {
     setSelectedLotId(lotId);
@@ -34,6 +40,16 @@ export default function AdminPage() {
       setIsCreatingLayout(false);
       router.push(`/createParkingLayout?id=${selectedLotId}`);
     }
+  };
+
+  const handleOpenIoTManager = (lot: ParkingLot) => {
+    setSelectedLotForIoT(lot);
+    setShowIoTManager(true);
+  };
+
+  const handleCloseIoTManager = () => {
+    setShowIoTManager(false);
+    setSelectedLotForIoT(null);
   };
 
   useEffect(() => {
@@ -57,6 +73,7 @@ export default function AdminPage() {
   const tabs = [
     { id: "map", label: "Map Management", icon: MapPin },
     { id: "lots", label: "Parking Lots", icon: Building },
+    { id: "iot", label: "IoT Devices", icon: Wifi },
     { id: "users", label: "Users", icon: Users },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "settings", label: "Settings", icon: Settings },
@@ -165,6 +182,13 @@ export default function AdminPage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
+                          onClick={() => handleOpenIoTManager(lot)}
+                          className="px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 text-sm font-semibold flex items-center"
+                        >
+                          <Wifi className="w-4 h-4 mr-1" />
+                          IoT
+                        </button>
+                        <button
                           onClick={() => handleParkingLayoutCreate(lot.id)}
                           className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 text-sm font-semibold"
                         >
@@ -185,6 +209,66 @@ export default function AdminPage() {
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "iot" && (
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                  <Wifi className="w-6 h-6 mr-2 text-purple-500" />
+                  IoT Device Management
+                </h2>
+              </div>
+
+              {loadingLots ? (
+                <div className="text-center py-12 text-gray-500">
+                  Loading...
+                </div>
+              ) : parkingLots.length === 0 ? (
+                <div className="text-center py-12">
+                  <Wifi className="w-20 h-20 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg font-medium mb-2">
+                    No parking lots available
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    Create parking lots first to manage IoT devices
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {parkingLots.map((lot) => (
+                    <div
+                      key={lot.id}
+                      className="flex items-center justify-between bg-gradient-to-r from-gray-50 to-purple-50 rounded-xl border border-gray-200 p-6 shadow-sm"
+                    >
+                      <div>
+                        <div className="font-semibold text-gray-800 text-lg">
+                          {lot.name}
+                        </div>
+                        <div className="text-gray-500 text-sm">
+                          {lot.address}
+                        </div>
+                        <div className="flex items-center space-x-4 mt-2 text-xs">
+                          <span className="text-gray-500">
+                            {lot.totalSpots} parking spaces
+                          </span>
+                          <span className="text-purple-600 font-medium">
+                            IoT devices can be assigned here
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleOpenIoTManager(lot)}
+                        className="px-6 py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 text-sm font-semibold flex items-center shadow-lg"
+                      >
+                        <Wifi className="w-4 h-4 mr-2" />
+                        Manage IoT Devices
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -282,6 +366,14 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* IoT Device Manager Modal */}
+      {showIoTManager && selectedLotForIoT && (
+        <IoTDeviceManager
+          parkingLot={selectedLotForIoT}
+          onClose={handleCloseIoTManager}
+        />
       )}
     </div>
   );
