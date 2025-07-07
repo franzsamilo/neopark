@@ -8,27 +8,28 @@ interface IoTStatDisplayProps {
     distance: number;
     timestamp: number;
   } | null;
+  status?: string;
 }
 
 export default function IoTStatDisplay(props: IoTStatDisplayProps) {
-  const { isConnected, lastData } = props;
+  const { isConnected, lastData, status } = props;
   return (
     <div className="p-4 rounded-xl shadow bg-white dark:bg-gray-800 space-y-4">
       <h2 className="text-xl font-bold text-gray-300">🚀 IoT Client Test</h2>
       <p className="text-gray-300">
-        Status:{" "}
-        <span className={isConnected ? "text-green-400" : "text-red-400"}>
-          {isConnected ? "Connected" : "Disconnected"}
+        Status:
+        <span className={isConnected ? "text-green-400" : "text-yellow-400"}>
+          {status || (isConnected ? "Connected" : "Connecting...")}
         </span>
       </p>
       {lastData ? (
         <div className="space-y-2 text-gray-300">
           <p>
-            📏 Latest Distance:{" "}
+            📏 Latest Distance:
             <span className="font-mono">{lastData.distance} cm</span>
           </p>
           <p>
-            🕒 Timestamp:{" "}
+            🕒 Timestamp:
             <span className="font-mono">
               {new Date(lastData.timestamp).toLocaleTimeString()}
             </span>

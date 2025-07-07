@@ -368,7 +368,6 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* IoT Device Manager Modal */}
       {showIoTManager && selectedLotForIoT && (
         <IoTDeviceManager
           parkingLot={selectedLotForIoT}

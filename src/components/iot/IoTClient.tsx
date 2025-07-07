@@ -3,7 +3,7 @@ import useWebsocketNeo from "@/hooks/useWebsocketNeo";
 import ParkingDisplayTest from "./ParkingDisplayTest";
 import IoTStatDisplay from "./IoTStatDisplay";
 export default function IoTClient() {
-  const { isConnected, lastData } = useWebsocketNeo();
+  const { isConnected, lastData, status } = useWebsocketNeo();
 
   return (
     <>
@@ -15,7 +15,11 @@ export default function IoTClient() {
         }
       />
       <div className="px-16" />
-      <IoTStatDisplay isConnected={isConnected} lastData={lastData} />
+      <IoTStatDisplay
+        isConnected={isConnected}
+        lastData={lastData}
+        status={status}
+      />
     </>
   );
 }

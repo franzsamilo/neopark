@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  MapPin,
-  Car,
-  Navigation,
-  ChevronUp,
-  ChevronDown,
-  Search,
-} from "lucide-react";
+import { MapPin, Car, ChevronUp, ChevronDown, Search } from "lucide-react";
 import { ParkingLot } from "@/constants/types/parking";
 
 interface ParkingSpotsListProps {
@@ -21,7 +14,6 @@ interface ParkingSpotsListProps {
 export default function ParkingSpotsList({
   searchQuery = "",
   onParkingLotSelect,
-  onNav,
   selectedLot,
 }: ParkingSpotsListProps) {
   const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
@@ -92,16 +84,13 @@ export default function ParkingSpotsList({
   };
 
   return (
-    <div className="bg-white rounded-t-3xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out">
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 sm:px-6 py-4 relative">
+    <div className="bg-white rounded-t-3xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out border border-gray-100 max-w-md mx-auto w-full">
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-4 relative">
         <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-16 h-1.5 bg-white/40 rounded-full"></div>
-
         <div className="flex items-center justify-between mt-3">
           <div className="flex-1">
-            <h2 className="text-lg sm:text-xl font-bold text-white">
-              Nearby Parking
-            </h2>
-            <p className="text-blue-100 text-xs sm:text-sm">
+            <h2 className="text-lg font-bold text-white">Nearby Parking</h2>
+            <p className="text-blue-100 text-xs">
               {isLoading
                 ? "Loading..."
                 : `${filteredLots.length} locations found`}
@@ -110,12 +99,13 @@ export default function ParkingSpotsList({
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-white hover:text-blue-100 transition-colors p-2 rounded-lg hover:bg-white/10"
+              className="text-white hover:text-blue-100 transition-colors p-2 rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              aria-label={isExpanded ? "Collapse list" : "Expand list"}
             >
               {isExpanded ? (
-                <ChevronDown className="w-5 h-5" />
+                <ChevronDown className="w-6 h-6" />
               ) : (
-                <ChevronUp className="w-5 h-5" />
+                <ChevronUp className="w-6 h-6" />
               )}
             </button>
             <div className="hidden sm:flex items-center space-x-2 text-white">
@@ -124,7 +114,6 @@ export default function ParkingSpotsList({
             </div>
           </div>
         </div>
-
         {searchQuery && (
           <div className="mt-3 flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
             <Search className="w-4 h-4 text-blue-100" />
@@ -134,23 +123,15 @@ export default function ParkingSpotsList({
           </div>
         )}
       </div>
-
       <div
         className={`transition-all duration-300 ease-in-out ${
-          isExpanded ? "max-h-[90vh] sm:max-h-[80vh]" : "max-h-80 sm:max-h-96"
+          isExpanded ? "max-h-[90vh]" : "max-h-80"
         } flex flex-col min-h-0`}
       >
         <div
-          className="overflow-y-auto max-h-[90vh] min-h-0 flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+          className="overflow-y-auto max-h-[90vh] min-h-0 flex-1 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-blue-50"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          style={{
-            maxHeight: "90vh",
-            minHeight: 0,
-            height: "100%",
-            scrollbarWidth: "thin",
-            scrollbarColor: "#d1d5db #f3f4f6",
-          }}
         >
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -171,21 +152,16 @@ export default function ParkingSpotsList({
               </div>
             </div>
           ) : (
-            <div className="space-y-1 p-2">
+            <div className="space-y-2 p-2">
               {filteredLots.map((lot) => {
                 const distance = calculateDistance();
                 const estimatedTime = calculateEstimatedTime(distance);
                 const isSelected = selectedLot && lot.id === selectedLot.id;
-
                 return (
-                  <div
+                  <button
                     key={lot.id}
-                    className={`border border-gray-100 rounded-xl transition-all duration-200 cursor-pointer ${
-                      isSelected
-                        ? "bg-blue-50 border-blue-400 shadow-lg ring-2 ring-blue-300"
-                        : selectedSpot === lot.id
-                          ? "bg-blue-50 border-blue-200 shadow-md"
-                          : "bg-white hover:bg-gray-50 hover:shadow-sm"
+                    className={`w-full text-left border border-gray-100 rounded-2xl transition-all duration-200 cursor-pointer flex items-center px-4 py-3 shadow-sm bg-white hover:bg-blue-50 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-300 ${
+                      isSelected ? "ring-2 ring-blue-400 bg-blue-50" : ""
                     } ${isDragging ? "pointer-events-none" : ""}`}
                     onClick={() => {
                       if (!isDragging) {
@@ -194,83 +170,51 @@ export default function ParkingSpotsList({
                       }
                     }}
                   >
-                    <div className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-800 text-base sm:text-lg mb-1 truncate">
-                            {lot.name}
-                          </h3>
-                          <div className="flex items-center text-sm text-gray-600 mb-2">
-                            <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-                            <span className="truncate">{lot.address}</span>
-                          </div>
-                          <div className="flex items-center space-x-3 text-xs sm:text-sm">
-                            <span className="text-gray-500">{distance}</span>
-                            <span className="text-gray-300">•</span>
-                            <span className="text-gray-500">
-                              {estimatedTime}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right ml-3 flex-shrink-0">
-                          <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                            {lot.availableSpots}
-                          </div>
-                          <div className="text-xs sm:text-sm text-gray-500">
-                            available
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs sm:text-sm font-medium text-gray-700">
-                            {lot.availableSpots} of {lot.totalSpots} spots
-                          </span>
-                          <span
-                            className={`text-xs sm:text-sm font-medium ${getAvailabilityColor(
-                              lot.availableSpots,
-                              lot.totalSpots
-                            )}`}
-                          >
-                            {getAvailabilityText(
-                              lot.availableSpots,
-                              lot.totalSpots
-                            )}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-500 ${getAvailabilityColor(
-                              lot.availableSpots,
-                              lot.totalSpots
-                            ).replace("text-", "bg-")}`}
-                            style={{
-                              width: `${
-                                lot.totalSpots > 0
-                                  ? (lot.availableSpots / lot.totalSpots) * 100
-                                  : 0
-                              }%`,
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      <div className="flex space-x-2">
-                        <button
-                          className="flex-1 bg-blue-500 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-blue-600 active:bg-blue-700 transition-colors flex items-center justify-center text-sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onNav?.(lot);
-                          }}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-gray-800 text-base mb-0 truncate">
+                          {lot.name}
+                        </h3>
+                        <span
+                          className={`ml-2 text-xs font-semibold ${getAvailabilityColor(
+                            lot.availableSpots,
+                            lot.totalSpots
+                          )}`}
                         >
-                          <Navigation className="w-4 h-4 mr-1.5" />
-                          <span className="hidden sm:inline">Navigate</span>
-                          <span className="sm:hidden">Nav</span>
-                        </button>
+                          {lot.availableSpots}/{lot.totalSpots}
+                        </span>
+                      </div>
+                      <div className="flex items-center text-xs text-gray-600 mb-1">
+                        <span>{lot.address}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className="text-xs text-gray-500">
+                          {distance}
+                        </span>
+                        <span className="text-xs text-gray-300">•</span>
+                        <span className="text-xs text-gray-500">
+                          {estimatedTime} away
+                        </span>
+                        <span
+                          className={`ml-2 text-xs font-medium ${getAvailabilityColor(
+                            lot.availableSpots,
+                            lot.totalSpots
+                          )}`}
+                        >
+                          {getAvailabilityText(
+                            lot.availableSpots,
+                            lot.totalSpots
+                          )}
+                        </span>
                       </div>
                     </div>
-                  </div>
+                    <div className="ml-4 flex-shrink-0 flex flex-col items-center">
+                      <Car className="w-7 h-7 text-blue-500 mb-1" />
+                      <span className="text-xs text-blue-600 font-bold">
+                        Go
+                      </span>
+                    </div>
+                  </button>
                 );
               })}
             </div>
