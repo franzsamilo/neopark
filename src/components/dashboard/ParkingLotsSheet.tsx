@@ -1,59 +1,67 @@
 "use client";
 
-import { useState } from "react";
-import {
-  ChevronUp,
-  ChevronDown,
-  MapPin,
-  Clock,
-  Car,
-  Navigation,
-  Phone,
-  Share2,
-} from "lucide-react";
+import React, { useRef, useState } from "react";
+import { ChevronDown, MapPin, Car } from "lucide-react";
 import { ParkingLot } from "@/constants/types/parking";
+import { motion, useMotionValue, animate } from "framer-motion";
 
 interface ParkingLotsSheetProps {
   parkingLots: ParkingLot[];
-  selectedLot: ParkingLot | null;
   onLotSelect: (lot: ParkingLot) => void;
-  onClose: () => void;
+  isLoading?: boolean;
 }
+
+const SNAP_POINTS = [0.15, 0.5, 0.92]; // collapsed, mid, expanded (percent of viewport height)
 
 export default function ParkingLotsSheet({
   parkingLots,
-  selectedLot,
   onLotSelect,
-  onClose,
+  isLoading = false,
 }: ParkingLotsSheetProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [dragStart, setDragStart] = useState(0);
-  const [currentY, setCurrentY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [snapIndex, setSnapIndex] = useState(1); // start at mid
+  const y = useMotionValue(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setDragStart(e.touches[0].clientY);
-    setIsDragging(true);
+  // Calculate snap positions in px
+  const getSnapPositions = () => {
+    const vh = viewportHeight || window.innerHeight;
+    return SNAP_POINTS.map((p) => vh * (1 - p));
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const deltaY = e.touches[0].clientY - dragStart;
-    setCurrentY(Math.max(0, deltaY));
-  };
+  // Set initial position on mount
+  React.useEffect(() => {
+    setViewportHeight(window.innerHeight);
+    const onResize = () => setViewportHeight(window.innerHeight);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    if (currentY > 100) {
-      setIsExpanded(false);
-    } else {
-      setIsExpanded(true);
+  React.useEffect(() => {
+    const snapPositions = getSnapPositions();
+    y.set(snapPositions[snapIndex]);
+  }, [viewportHeight, snapIndex]);
+
+  // Drag logic
+  const handleDragEnd = (_e: unknown, info: { point: { y: number } }) => {
+    const snapPositions = getSnapPositions();
+    const current = info.point.y;
+    // Find the closest snap point
+    let closest = 0;
+    let minDist = Math.abs(current - snapPositions[0]);
+    for (let i = 1; i < snapPositions.length; i++) {
+      const dist = Math.abs(current - snapPositions[i]);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = i;
+      }
     }
-    setCurrentY(0);
-  };
-
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
+    setSnapIndex(closest);
+    animate(y, snapPositions[closest], {
+      type: "spring",
+      stiffness: 400,
+      damping: 40,
+    });
   };
 
   const getAvailabilityColor = (lot: ParkingLot) => {
@@ -81,289 +89,96 @@ export default function ParkingLotsSheet({
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
-      {isExpanded && (
-        <div
-          className="fixed inset-0 bg-black/20 z-40"
-          onClick={() => setIsExpanded(false)}
-        />
-      )}
-
-      <div
-        className={`bg-white/95 backdrop-blur-md rounded-t-3xl shadow-2xl border border-gray-200 transition-all duration-500 ease-out ${
-          isExpanded ? "h-[85vh]" : "h-24"
-        }`}
-        style={{
-          transform: `translateY(${currentY}px)`,
-        }}
-      >
-        <div
-          className="flex justify-center pt-4 pb-3 cursor-pointer"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onClick={toggleExpanded}
-        >
-          <div className="w-16 h-1.5 bg-gray-300 rounded-full hover:bg-gray-400 transition-colors duration-200"></div>
+    <motion.div
+      ref={sheetRef}
+      className="fixed bottom-0 left-0 right-0 z-50 touch-pan-y"
+      style={{ y }}
+      drag="y"
+      dragConstraints={{
+        top: 0,
+        bottom: viewportHeight ? viewportHeight : 1000,
+      }}
+      dragElastic={0.2}
+      onDragEnd={handleDragEnd}
+      initial={false}
+      transition={{ type: "spring", stiffness: 400, damping: 40 }}
+    >
+      <div className="bg-white/95 backdrop-blur-md rounded-t-3xl shadow-2xl border border-blue-100 h-[92vh] flex flex-col">
+        <div className="flex justify-center pt-4 pb-3 cursor-grab active:cursor-grabbing">
+          <div className="w-16 h-1.5 bg-blue-200 rounded-full hover:bg-blue-300 transition-colors duration-200"></div>
         </div>
-
-        <div className="px-6 pb-6 border-b border-gray-100">
+        <div className="px-6 pb-6 border-b border-blue-100">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h3 className="text-2xl font-bold text-gray-800">
-                {isExpanded ? "Parking Lots" : "Quick View"}
-              </h3>
-              {!isExpanded && (
-                <p className="text-sm text-gray-600 mt-1">
-                  {parkingLots.length} lots available •{" "}
-                  {parkingLots.reduce(
-                    (sum, lot) => sum + lot.availableSpots,
-                    0
-                  )}{" "}
-                  spots
-                </p>
-              )}
+              <h3 className="text-2xl font-bold text-gray-800">Parking Lots</h3>
             </div>
             <button
-              onClick={toggleExpanded}
-              className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-2xl transition-all duration-200"
+              className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all duration-200"
+              style={{ pointerEvents: "none", opacity: 0.5 }}
+              tabIndex={-1}
+              aria-hidden="true"
             >
-              {isExpanded ? (
-                <ChevronDown className="w-6 h-6" />
-              ) : (
-                <ChevronUp className="w-6 h-6" />
-              )}
+              <ChevronDown className="w-6 h-6" />
             </button>
           </div>
         </div>
-
-        {isExpanded && (
-          <div className="flex-1 overflow-y-auto">
-            {selectedLot ? (
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <h4 className="text-2xl font-bold text-gray-800">
-                        {selectedLot.name}
-                      </h4>
-                      <div
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getAvailabilityBadge(
-                          selectedLot
-                        )}`}
-                      >
-                        {getAvailabilityText(selectedLot)}
-                      </div>
-                    </div>
-                    <div className="flex items-center text-gray-600 mb-3">
-                      <MapPin className="w-5 h-5 mr-2 text-blue-500" />
-                      <span className="text-sm">{selectedLot.address}</span>
-                    </div>
-                    {selectedLot.description && (
-                      <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-                        {selectedLot.description}
-                      </p>
-                    )}
-                  </div>
+        <div className="flex-1 overflow-y-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <span className="ml-4 text-blue-500 font-medium">
+                Loading parking lots...
+              </span>
+            </div>
+          ) : (
+            <div className="p-6">
+              <div className="space-y-3">
+                {parkingLots.map((lot) => (
                   <button
-                    onClick={onClose}
-                    className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-2xl transition-all duration-200"
+                    key={lot.id}
+                    onClick={() => onLotSelect(lot)}
+                    className="w-full bg-white border border-gray-200 rounded-2xl p-4 text-left hover:border-blue-300 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <ChevronDown className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-6 border border-blue-100">
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-green-600 mb-1">
-                        {selectedLot.availableSpots}
-                      </div>
-                      <div className="text-sm text-gray-600 font-medium">
-                        Available
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-gray-800 mb-1">
-                        {selectedLot.totalSpots}
-                      </div>
-                      <div className="text-sm text-gray-600 font-medium">
-                        Total Spots
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-blue-600 mb-1">
-                        {(
-                          (selectedLot.availableSpots /
-                            selectedLot.totalSpots) *
-                          100
-                        ).toFixed(0)}
-                        %
-                      </div>
-                      <div className="text-sm text-gray-600 font-medium">
-                        Capacity
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <div className="flex justify-between text-sm text-gray-600 mb-2">
-                      <span className="font-medium">Availability</span>
-                      <span className="font-medium">
-                        {(
-                          (selectedLot.availableSpots /
-                            selectedLot.totalSpots) *
-                          100
-                        ).toFixed(0)}
-                        %
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div
-                        className="h-3 rounded-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-1000 ease-out"
-                        style={{
-                          width: `${
-                            (selectedLot.availableSpots /
-                              selectedLot.totalSpots) *
-                            100
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200">
-                    <Phone className="w-4 h-4" />
-                    <span className="text-sm font-medium">Call</span>
-                  </button>
-                  <button className="flex items-center justify-center space-x-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200">
-                    <Share2 className="w-4 h-4" />
-                    <span className="text-sm font-medium">Share</span>
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-4 px-6 rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold flex items-center justify-center space-x-3">
-                    <Navigation className="w-5 h-5" />
-                    <span>Get Directions</span>
-                  </button>
-                  <button className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 px-6 rounded-2xl hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold flex items-center justify-center space-x-3">
-                    <Car className="w-5 h-5" />
-                    <span>Reserve Spot</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-6">
-                <div className="space-y-4">
-                  {parkingLots.map((lot, index) => (
-                    <div
-                      key={lot.id}
-                      className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-5 cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-blue-200"
-                      onClick={() => onLotSelect(lot)}
-                      style={{
-                        animationDelay: `${index * 100}ms`,
-                      }}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h4 className="text-lg font-bold text-gray-800">
-                              {lot.name}
-                            </h4>
-                            <div
-                              className={`px-2 py-1 rounded-full text-xs font-semibold ${getAvailabilityBadge(
-                                lot
-                              )}`}
-                            >
-                              {getAvailabilityText(lot)}
-                            </div>
-                          </div>
-                          <div className="flex items-center text-gray-600 mb-3">
-                            <MapPin className="w-4 h-4 mr-2 text-blue-500" />
-                            <span className="text-sm">{lot.address}</span>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className="flex items-center text-sm">
-                                <Car className="w-4 h-4 mr-2 text-gray-500" />
-                                <span className={getAvailabilityColor(lot)}>
-                                  {lot.availableSpots} available
-                                </span>
-                              </div>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <Clock className="w-4 h-4 mr-2" />
-                                <span>{getAvailabilityText(lot)}</span>
-                              </div>
-                            </div>
-
-                            <div className="text-right">
-                              <div
-                                className={`text-sm font-bold ${getAvailabilityColor(
-                                  lot
-                                )}`}
-                              >
-                                {getAvailabilityText(lot)}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {lot.totalSpots} total
-                              </div>
-                            </div>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h4 className="font-semibold text-gray-800">
+                            {lot.name}
+                          </h4>
+                          <div
+                            className={`px-2 py-1 rounded-full text-xs font-semibold ${getAvailabilityBadge(
+                              lot
+                            )}`}
+                          >
+                            {getAvailabilityText(lot)}
                           </div>
                         </div>
+                        <div className="flex items-center text-gray-600 text-sm mb-2">
+                          <MapPin className="w-4 h-4 mr-1 text-blue-500" />
+                          <span className="truncate">{lot.address}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-500">
+                            {lot.availableSpots}/{lot.totalSpots} spots
+                          </span>
+                          <span
+                            className={`text-sm font-semibold ${getAvailabilityColor(
+                              lot
+                            )}`}
+                          >
+                            {getAvailabilityText(lot)}
+                          </span>
+                        </div>
                       </div>
+                      <Car className="w-6 h-6 text-blue-500 ml-3" />
                     </div>
-                  ))}
-                </div>
-
-                {parkingLots.length === 0 && (
-                  <div className="text-center py-12">
-                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Car className="w-10 h-10 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 text-lg font-medium mb-2">
-                      No parking lots found nearby
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      Try searching in a different area
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {!isExpanded && (
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                  <Car className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-gray-800">
-                    {parkingLots.reduce(
-                      (sum, lot) => sum + lot.availableSpots,
-                      0
-                    )}{" "}
-                    spots available
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {parkingLots.length} parking lots nearby
-                  </div>
-                </div>
-              </div>
-              <div className="text-blue-500 font-semibold text-sm">
-                Tap to expand
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

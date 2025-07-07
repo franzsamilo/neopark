@@ -3,11 +3,9 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ArrowLeft,
   Save,
   Undo,
   Redo,
-  Grid,
   Car,
   Route,
   AlertTriangle,
@@ -17,11 +15,10 @@ import {
   Trash2,
   Square,
   RotateCw,
-  Copy,
-  Clipboard,
 } from "lucide-react";
 import { ParkingLot, LayoutElement, Size } from "@/constants/types/parking";
 import { SpotType, LayoutElementType } from "@/constants/enums/parking";
+import { motion } from "framer-motion";
 
 function CreateParkingLayoutContent() {
   const router = useRouter();
@@ -36,11 +33,10 @@ function CreateParkingLayoutContent() {
   const [selectedTool, setSelectedTool] = useState<LayoutElementType>(
     LayoutElementType.PARKING_SPACE
   );
-  const [gridSize, setGridSize] = useState(20);
+  const [gridSize] = useState(20);
   const [history, setHistory] = useState<LayoutElement[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(
@@ -449,7 +445,6 @@ function CreateParkingLayoutContent() {
   const handleSave = async () => {
     if (!parkingLot) return;
 
-    setSaving(true);
     try {
       const response = await fetch(`/api/parking-lot/${parkingLot.id}/layout`, {
         method: "PUT",
@@ -481,8 +476,6 @@ function CreateParkingLayoutContent() {
     } catch (error) {
       console.error("Error saving layout:", error);
       alert("Error saving layout");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -553,368 +546,311 @@ function CreateParkingLayoutContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.push("/admin")}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">
-                  Layout Editor - {parkingLot.name}
-                </h1>
-                <p className="text-gray-600">{parkingLot.address}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={undo}
-                disabled={historyIndex <= 0}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-                title="Undo (Ctrl+Z)"
-              >
-                <Undo className="w-5 h-5 text-gray-600" />
-              </button>
-              <button
-                onClick={redo}
-                disabled={historyIndex >= history.length - 1}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-                title="Redo (Ctrl+Y)"
-              >
-                <Redo className="w-5 h-5 text-gray-600" />
-              </button>
-              <button
-                onClick={() => setCopiedElement(selectedElement)}
-                disabled={!selectedElement}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-                title="Copy (Ctrl+C)"
-              >
-                <Copy className="w-5 h-5 text-gray-600" />
-              </button>
-              <button
-                onClick={handlePaste}
-                disabled={!copiedElement}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-                title="Paste (Ctrl+V)"
-              >
-                <Clipboard className="w-5 h-5 text-gray-600" />
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center space-x-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>{saving ? "Saving..." : "Save Layout"}</span>
-              </button>
-            </div>
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-100 via-white to-indigo-100 flex flex-col">
+      <div className="flex flex-col md:flex-row gap-6 p-4 md:p-8">
+        {/* Left Panel: Tools & Properties */}
+        <motion.div
+          initial={{ x: -40, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 30 }}
+          className="w-full md:w-80 bg-white/80 backdrop-blur-2xl rounded-2xl shadow-xl border border-blue-100 p-6 flex flex-col gap-6 mb-4 md:mb-0"
+        >
+          {/* Toolbar */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {/* Tool buttons with icons, tooltips, and active state */}
+            {tools.map((tool) => {
+              const Icon = tool.icon;
+              return (
+                <button
+                  key={tool.type}
+                  className={`p-3 rounded-xl shadow-md bg-blue-50 hover:bg-blue-100 transition-all ${
+                    selectedTool === tool.type ? "ring-2 ring-blue-400" : ""
+                  }`}
+                  title={tool.label}
+                  onClick={() => setSelectedTool(tool.type)}
+                >
+                  <Icon className="w-5 h-5 text-blue-600" />
+                </button>
+              );
+            })}
           </div>
-        </div>
-      </div>
-
-      <div className="flex h-[calc(100vh-80px)]">
-        <div className="w-64 bg-white/80 backdrop-blur-sm border-r border-gray-200 h-full overflow-y-auto">
-          <div className="p-4">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                Tools
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {tools.map((tool) => {
-                  const Icon = tool.icon;
-                  return (
-                    <button
-                      key={tool.type}
-                      onClick={() => setSelectedTool(tool.type)}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        selectedTool === tool.type
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <Icon
-                        className={`w-6 h-6 ${tool.color.replace(
-                          "bg-",
-                          "text-"
-                        )} mx-auto mb-1`}
-                      />
-                      <div className="text-xs text-gray-600 text-center">
-                        {tool.label}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                Grid Settings
-              </h3>
+          {/* Undo/Redo/Save */}
+          <div className="flex gap-2 mb-4">
+            <button
+              className="p-2 rounded-lg bg-white shadow hover:bg-blue-50 transition-all"
+              onClick={undo}
+              title="Undo"
+            >
+              <Undo />
+            </button>
+            <button
+              className="p-2 rounded-lg bg-white shadow hover:bg-blue-50 transition-all"
+              onClick={redo}
+              title="Redo"
+            >
+              <Redo />
+            </button>
+            <button
+              className="p-2 rounded-lg bg-blue-500 text-white shadow hover:bg-blue-600 transition-all"
+              onClick={handleSave}
+              title="Save"
+            >
+              <Save />
+            </button>
+          </div>
+          {/* Properties Panel (for selected element) */}
+          {selectedElement && (
+            <div className="bg-white/90 rounded-xl p-4 shadow border border-blue-50">
+              <h4 className="font-semibold text-blue-700 mb-2">
+                Element Properties
+              </h4>
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Grid Size: {gridSize}px
+                    Position
                   </label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="50"
-                    value={gridSize}
-                    onChange={(e) => setGridSize(Number(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Grid className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Snap to grid</span>
-                </div>
-              </div>
-            </div>
-
-            {selectedElement && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                  Properties
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Position
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="number"
-                        value={selectedElement.position.x}
-                        onChange={(e) =>
-                          handleElementUpdate(selectedElement.id, {
-                            position: {
-                              ...selectedElement.position,
-                              x: Number(e.target.value),
-                            },
-                          })
-                        }
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        placeholder="X"
-                      />
-                      <input
-                        type="number"
-                        value={selectedElement.position.y}
-                        onChange={(e) =>
-                          handleElementUpdate(selectedElement.id, {
-                            position: {
-                              ...selectedElement.position,
-                              y: Number(e.target.value),
-                            },
-                          })
-                        }
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        placeholder="Y"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Size
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="number"
-                        value={selectedElement.size.width}
-                        onChange={(e) =>
-                          handleElementUpdate(selectedElement.id, {
-                            size: {
-                              ...selectedElement.size,
-                              width: Number(e.target.value),
-                            },
-                          })
-                        }
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        placeholder="Width"
-                      />
-                      <input
-                        type="number"
-                        value={selectedElement.size.height}
-                        onChange={(e) =>
-                          handleElementUpdate(selectedElement.id, {
-                            size: {
-                              ...selectedElement.size,
-                              height: Number(e.target.value),
-                            },
-                          })
-                        }
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                        placeholder="Height"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Rotation
-                    </label>
+                  <div className="grid grid-cols-2 gap-2">
                     <input
                       type="number"
-                      value={selectedElement.rotation}
+                      value={selectedElement.position.x}
                       onChange={(e) =>
                         handleElementUpdate(selectedElement.id, {
-                          rotation: Number(e.target.value),
+                          position: {
+                            ...selectedElement.position,
+                            x: Number(e.target.value),
+                          },
                         })
                       }
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                      placeholder="Degrees"
+                      placeholder="X"
+                    />
+                    <input
+                      type="number"
+                      value={selectedElement.position.y}
+                      onChange={(e) =>
+                        handleElementUpdate(selectedElement.id, {
+                          position: {
+                            ...selectedElement.position,
+                            y: Number(e.target.value),
+                          },
+                        })
+                      }
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      placeholder="Y"
                     />
                   </div>
-                  <button
-                    onClick={() => handleElementDelete(selectedElement.id)}
-                    className="w-full px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Delete Element</span>
-                  </button>
                 </div>
-              </div>
-            )}
-
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                Statistics
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Elements:</span>
-                  <span className="font-medium">{layoutElements.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Parking Spaces:</span>
-                  <span className="font-medium">
-                    {
-                      layoutElements.filter(
-                        (e) => e.elementType === LayoutElementType.PARKING_SPACE
-                      ).length
-                    }
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Driving Paths:</span>
-                  <span className="font-medium">
-                    {
-                      layoutElements.filter(
-                        (e) => e.elementType === LayoutElementType.DRIVING_PATH
-                      ).length
-                    }
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 p-3 bg-blue-50 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-800 mb-2">
-                Quick Tips
-              </h4>
-              <ul className="text-xs text-blue-700 space-y-1">
-                <li>• Click and drag to move elements</li>
-                <li>• Drag corners to resize</li>
-                <li>• Drag rotate handle to rotate</li>
-                <li>• Ctrl+C/V to copy/paste</li>
-                <li>• Delete key to remove elements</li>
-                <li>• Click empty area to deselect</li>
-                <li>• Escape to deselect</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 p-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 h-full overflow-hidden">
-            <div
-              ref={canvasRef}
-              className="relative w-full h-full bg-gray-50 cursor-crosshair select-none"
-              style={{
-                backgroundImage: `
-                  linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)
-                `,
-                backgroundSize: `${gridSize}px ${gridSize}px`,
-              }}
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  handleCanvasClick(e);
-                } else {
-                  setSelectedElement(null);
-                }
-              }}
-            >
-              {layoutElements.map((element) => {
-                const isSelected = selectedElement?.id === element.id;
-
-                return (
-                  <div
-                    key={element.id}
-                    className={`absolute border-2 transition-all ${
-                      isSelected
-                        ? "border-blue-500 shadow-lg z-10"
-                        : "border-gray-300 hover:border-gray-400"
-                    }`}
-                    style={{
-                      left: element.position.x,
-                      top: element.position.y,
-                      width: element.size.width,
-                      height: element.size.height,
-                      transform: `rotate(${element.rotation}deg)`,
-                      cursor: isDragging ? "grabbing" : "grab",
-                    }}
-                    onMouseDown={(e) => handleElementMouseDown(e, element)}
-                    onClick={(e) => handleElementClick(e, element)}
-                  >
-                    <div
-                      className="w-full h-full flex items-center justify-center text-white font-bold text-xs"
-                      style={{
-                        backgroundColor: getElementColor(element.elementType),
-                      }}
-                    >
-                      {getElementLabel(element)}
-                    </div>
-
-                    {isSelected && (
-                      <>
-                        <div
-                          className="resize-handle absolute -bottom-1 -right-1 w-3 h-3 bg-blue-500 border border-white rounded cursor-se-resize"
-                          data-handle="se"
-                        ></div>
-                        <div
-                          className="resize-handle absolute -bottom-1 -left-1 w-3 h-3 bg-blue-500 border border-white rounded cursor-sw-resize"
-                          data-handle="sw"
-                        ></div>
-                        <div
-                          className="resize-handle absolute -top-1 -right-1 w-3 h-3 bg-blue-500 border border-white rounded cursor-ne-resize"
-                          data-handle="ne"
-                        ></div>
-                        <div
-                          className="resize-handle absolute -top-1 -left-1 w-3 h-3 bg-blue-500 border border-white rounded cursor-nw-resize"
-                          data-handle="nw"
-                        ></div>
-
-                        <div
-                          className="rotate-handle absolute -top-8 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-blue-500 border border-white rounded-full cursor-grab flex items-center justify-center"
-                          style={{
-                            transform: `translateX(-50%) rotate(${-element.rotation}deg)`,
-                          }}
-                        >
-                          <RotateCw className="w-3 h-3 text-white" />
-                        </div>
-                      </>
-                    )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Size
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      value={selectedElement.size.width}
+                      onChange={(e) =>
+                        handleElementUpdate(selectedElement.id, {
+                          size: {
+                            ...selectedElement.size,
+                            width: Number(e.target.value),
+                          },
+                        })
+                      }
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      placeholder="Width"
+                    />
+                    <input
+                      type="number"
+                      value={selectedElement.size.height}
+                      onChange={(e) =>
+                        handleElementUpdate(selectedElement.id, {
+                          size: {
+                            ...selectedElement.size,
+                            height: Number(e.target.value),
+                          },
+                        })
+                      }
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      placeholder="Height"
+                    />
                   </div>
-                );
-              })}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rotation
+                  </label>
+                  <input
+                    type="number"
+                    value={selectedElement.rotation}
+                    onChange={(e) =>
+                      handleElementUpdate(selectedElement.id, {
+                        rotation: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                    placeholder="Degrees"
+                  />
+                </div>
+                <button
+                  onClick={() => handleElementDelete(selectedElement.id)}
+                  className="w-full px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center space-x-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete Element</span>
+                </button>
+              </div>
+            </div>
+          )}
+          {/* Stats & Tips (as before, but glassy) */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">
+              Statistics
+            </h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Elements:</span>
+                <span className="font-medium">{layoutElements.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Parking Spaces:</span>
+                <span className="font-medium">
+                  {
+                    layoutElements.filter(
+                      (e) => e.elementType === LayoutElementType.PARKING_SPACE
+                    ).length
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Driving Paths:</span>
+                <span className="font-medium">
+                  {
+                    layoutElements.filter(
+                      (e) => e.elementType === LayoutElementType.DRIVING_PATH
+                    ).length
+                  }
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+          <div className="mt-6 p-3 bg-blue-50 rounded-lg">
+            <h4 className="text-sm font-semibold text-blue-800 mb-2">
+              Quick Tips
+            </h4>
+            <ul className="text-xs text-blue-700 space-y-1">
+              <li>• Click and drag to move elements</li>
+              <li>• Drag corners to resize</li>
+              <li>• Drag rotate handle to rotate</li>
+              <li>• Ctrl+C/V to copy/paste</li>
+              <li>• Delete key to remove elements</li>
+              <li>• Click empty area to deselect</li>
+              <li>• Escape to deselect</li>
+            </ul>
+          </div>
+        </motion.div>
+        {/* Right Panel: Canvas */}
+        <motion.div
+          initial={{ x: 40, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 30 }}
+          className="flex-1 bg-white/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-blue-100 h-[80vh] overflow-hidden relative"
+        >
+          <div
+            ref={canvasRef}
+            className="relative w-full h-full grid-bg cursor-crosshair select-none"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px)
+                `,
+              backgroundSize: `${gridSize}px ${gridSize}px`,
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                handleCanvasClick(e);
+              } else {
+                setSelectedElement(null);
+              }
+            }}
+          >
+            {layoutElements.map((element) => {
+              const isSelected = selectedElement?.id === element.id;
+              return (
+                <motion.div
+                  key={element.id}
+                  className={`absolute border-2 transition-all rounded-xl flex items-center justify-center ${
+                    isSelected
+                      ? "border-blue-500 shadow-xl z-10 scale-105"
+                      : "border-gray-300 hover:border-blue-400"
+                  }`}
+                  style={{
+                    left: element.position.x,
+                    top: element.position.y,
+                    width: element.size.width,
+                    height: element.size.height,
+                    transform: `rotate(${element.rotation}deg)`,
+                    cursor: isDragging ? "grabbing" : "grab",
+                  }}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.98 }}
+                  onMouseDown={(e) => handleElementMouseDown(e, element)}
+                  onClick={(e) => handleElementClick(e, element)}
+                >
+                  <div
+                    className="w-full h-full flex items-center justify-center text-white font-bold text-xs rounded-xl shadow"
+                    style={{
+                      backgroundColor: getElementColor(element.elementType),
+                    }}
+                  >
+                    {getElementLabel(element)}
+                  </div>
+                  {isSelected && (
+                    <>
+                      <div
+                        className="resize-handle absolute -bottom-1 -right-1 w-3 h-3 bg-blue-500 border border-white rounded cursor-se-resize"
+                        data-handle="se"
+                      ></div>
+                      <div
+                        className="resize-handle absolute -bottom-1 -left-1 w-3 h-3 bg-blue-500 border border-white rounded cursor-sw-resize"
+                        data-handle="sw"
+                      ></div>
+                      <div
+                        className="resize-handle absolute -top-1 -right-1 w-3 h-3 bg-blue-500 border border-white rounded cursor-ne-resize"
+                        data-handle="ne"
+                      ></div>
+                      <div
+                        className="resize-handle absolute -top-1 -left-1 w-3 h-3 bg-blue-500 border border-white rounded cursor-nw-resize"
+                        data-handle="nw"
+                      ></div>
+                      <div
+                        className="rotate-handle absolute -top-8 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-blue-500 border border-white rounded-full cursor-grab flex items-center justify-center"
+                        style={{
+                          transform: `translateX(-50%) rotate(${-element.rotation}deg)`,
+                        }}
+                      >
+                        <RotateCw className="w-3 h-3 text-white" />
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              );
+            })}
+            <style jsx>{`
+              .grid-bg {
+                background-image: linear-gradient(
+                    rgba(59, 130, 246, 0.08) 1px,
+                    transparent 1px
+                  ),
+                  linear-gradient(
+                    90deg,
+                    rgba(59, 130, 246, 0.08) 1px,
+                    transparent 1px
+                  );
+                background-size: 20px 20px;
+              }
+            `}</style>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

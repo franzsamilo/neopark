@@ -1,17 +1,45 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Car, Search } from "lucide-react";
-import ParkingSpotsList from "@/components/dashboard/ParkingSpotsList";
 import Map from "@/components/dashboard/Map";
 import LayoutPreview from "@/components/dashboard/LayoutPreview";
 import { ParkingLot } from "@/constants/types/parking";
+import ParkingLotsSheet from "@/components/dashboard/ParkingLotsSheet";
 
 export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLot, setSelectedLot] = useState<ParkingLot | null>(null);
   const [layoutPreviewLot, setLayoutPreviewLot] = useState<ParkingLot | null>(
     null
+  );
+  const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadParkingLots = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch("/api/parking-lot");
+        if (response.ok) {
+          const lots = await response.json();
+          setParkingLots(Array.isArray(lots) ? lots : []);
+        }
+      } catch {
+        setParkingLots([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadParkingLots();
+    const interval = setInterval(loadParkingLots, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const filteredLots = parkingLots.filter(
+    (lot) =>
+      lot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lot.address.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleParkingLotSelect = useCallback((lot: ParkingLot) => {
@@ -74,36 +102,22 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-2 sm:p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-                <div className="h-[500px] sm:h-[600px]">
-                  <Map
-                    searchQuery={searchQuery}
-                    onParkingLotSelect={handleParkingLotSelect}
-                    onViewLayout={handleViewLayout}
-                    selectedLot={selectedLot}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-1">
-              <ParkingSpotsList
-                searchQuery={searchQuery}
-                onParkingLotSelect={handleParkingLotSelect}
-                onNav={setSelectedLot}
-                selectedLot={selectedLot}
-              />
-            </div>
-          </div>
-        </div>
+      <div className="relative w-full h-[calc(100vh-180px)] overflow-hidden">
+        <Map
+          searchQuery={searchQuery}
+          onParkingLotSelect={handleParkingLotSelect}
+          onViewLayout={handleViewLayout}
+          selectedLot={selectedLot}
+        />
+        <ParkingLotsSheet
+          parkingLots={filteredLots}
+          onLotSelect={handleParkingLotSelect}
+          isLoading={isLoading}
+        />
       </div>
 
       {layoutPreviewLot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm">
           <div className="relative w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl p-4 sm:p-8 animate-fade-in-up">
             <button
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold z-10"

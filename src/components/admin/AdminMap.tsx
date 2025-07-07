@@ -398,7 +398,7 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
                         Location selected!
                       </p>
                       <p className="text-xs text-green-600">
-                        {clickedLocation.lat.toFixed(6)},{" "}
+                        {clickedLocation.lat.toFixed(6)},
                         {clickedLocation.lng.toFixed(6)}
                       </p>
                     </div>
