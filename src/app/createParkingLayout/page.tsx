@@ -762,7 +762,7 @@ function CreateParkingLayoutContent() {
               backgroundImage: `
                 linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px)
-              `,
+                `,
               backgroundSize: `${gridSize}px ${gridSize}px`,
             }}
             onClick={(e) => {

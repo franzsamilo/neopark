@@ -17,7 +17,6 @@ export default function ParkingSpotsList({
   selectedLot,
 }: ParkingSpotsListProps) {
   const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
-  const [selectedSpot, setSelectedSpot] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -165,7 +164,6 @@ export default function ParkingSpotsList({
                     } ${isDragging ? "pointer-events-none" : ""}`}
                     onClick={() => {
                       if (!isDragging) {
-                        setSelectedSpot(lot.id);
                         onParkingLotSelect?.(lot);
                       }
                     }}
