@@ -171,7 +171,7 @@ export default function ParkingLotsSheet({
                         <span className="font-bold text-gray-700">
                           {lot.totalSpots}
                         </span>
-                        spots
+                        <span className="ml-2">spots</span>
                       </span>
                       <span
                         className={`text-sm font-brand ${getAvailabilityColor(

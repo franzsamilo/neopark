@@ -30,6 +30,10 @@ export default function Map({
   } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const { lastData } = useWebsocketNeo();
+  const openPopupRef = useRef<{
+    popup: mapboxgl.Popup | null;
+    lotId: string | null;
+  }>({ popup: null, lotId: null });
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -235,13 +239,7 @@ export default function Map({
         </div>
       `;
 
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-        className: "custom-popup",
-        closeButton: true,
-        closeOnClick: false,
-        maxWidth: "340px",
-      }).setHTML(`
+      const popupHtml = `
         <div class="p-5 bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-blue-100 flex flex-col gap-4 min-w-[280px]">
           <div class="flex items-center gap-2 mb-1">
             <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -329,7 +327,23 @@ export default function Map({
             }
           </div>
         </div>
-      `);
+      `;
+
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+        className: "custom-popup",
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: "340px",
+      }).setHTML(popupHtml);
+
+      // Track open popup and lotId
+      popup.on("open", () => {
+        openPopupRef.current = { popup, lotId: lot.id };
+      });
+      popup.on("close", () => {
+        openPopupRef.current = { popup: null, lotId: null };
+      });
 
       new mapboxgl.Marker(markerEl)
         .setLngLat([lot.coordinates.lng, lot.coordinates.lat])
@@ -454,6 +468,125 @@ export default function Map({
     if (!isMapLoaded) return;
     addParkingLotMarkers(parkingLots);
   }, [parkingLots, isMapLoaded]);
+
+  // Add this effect to update open popup content in real time
+  useEffect(() => {
+    const { popup, lotId } = openPopupRef.current;
+    if (!popup || !lotId) return;
+    const lot = parkingLots.find((l) => l.id === lotId);
+    if (!lot) return;
+    // Regenerate popup HTML with latest data
+    let totalSpots = lot.totalSpots;
+    let availableSpots = lot.availableSpots;
+    if (lot.layoutElements && Array.isArray(lot.layoutElements)) {
+      const parkingSpaces = lot.layoutElements.filter(
+        (element: LayoutElement) => element.elementType === "PARKING_SPACE"
+      );
+      totalSpots = parkingSpaces.length;
+      availableSpots = parkingSpaces.filter(
+        (element: LayoutElement) =>
+          !(element.properties as Record<string, unknown>)?.isOccupied
+      ).length;
+    }
+    const availabilityPercentage =
+      totalSpots > 0 ? (availableSpots / totalSpots) * 100 : 0;
+    let statusText = "Almost Full";
+    if (availabilityPercentage > 50) {
+      statusText = "Many Available";
+    } else if (availabilityPercentage > 20) {
+      statusText = "Limited";
+    }
+    const popupHtml = `
+      <div class="p-5 bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-blue-100 flex flex-col gap-4 min-w-[280px]">
+        <div class="flex items-center gap-2 mb-1">
+          <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <h3 class="text-lg font-display gradient-text-primary truncate flex-1 text-shadow-sm">${
+            lot.name
+          }</h3>
+        </div>
+        <div class="flex items-center text-gray-500 text-sm mb-2 gap-1 font-body">
+          <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span class="truncate">${lot.address}</span>
+        </div>
+        <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-4 mb-2 flex flex-col gap-2 shadow-inner">
+          <div class="flex items-center justify-between mb-1">
+            <div class="text-center flex-1">
+              <div class="text-2xl font-heading text-green-600">${availableSpots}</div>
+              <div class="text-xs text-gray-600 font-body">Available</div>
+            </div>
+            <div class="w-px h-8 bg-blue-200 mx-3"></div>
+            <div class="text-center flex-1">
+              <div class="text-2xl font-heading text-blue-600">${totalSpots}</div>
+              <div class="text-xs text-gray-600 font-body">Total</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs text-gray-600 font-body">
+            <span>Availability</span>
+            <span class="font-heading">${availabilityPercentage.toFixed(
+              0
+            )}%</span>
+          </div>
+          <div class="w-full bg-blue-100 rounded-full h-2 mt-1">
+            <div 
+              class="h-2 rounded-full transition-all duration-500 ${
+                availabilityPercentage > 50
+                  ? "bg-green-500"
+                  : availabilityPercentage > 20
+                    ? "bg-yellow-500"
+                    : "bg-red-500"
+              }"
+              style="width: ${availabilityPercentage}%"
+            ></div>
+          </div>
+          <div class="text-center mt-1">
+            <span class="text-xs font-brand ${
+              availabilityPercentage > 50
+                ? "text-green-600"
+                : availabilityPercentage > 20
+                  ? "text-yellow-600"
+                  : "text-red-600"
+            }">${statusText}</span>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2 mt-2">
+          <button 
+            onclick="window.selectParkingLot('${lot.id}')"
+            class="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-base font-heading shadow-lg hover:shadow-xl transform hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span class="font-body">Select Location</span>
+          </button>
+          ${
+            lot.layoutData &&
+            Array.isArray(lot.layoutData) &&
+            lot.layoutData.length > 0
+              ? `
+          <button 
+            onclick="window.viewLayout('${lot.id}')"
+            class="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 text-base font-heading shadow-lg hover:shadow-xl transform hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+            <span class="font-body">View Layout</span>
+          </button>
+          `
+              : ""
+          }
+        </div>
+      </div>
+    `;
+    popup.setHTML(popupHtml);
+  }, [parkingLots]);
 
   return (
     <div className="w-full h-full relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
