@@ -45,7 +45,7 @@ export default function Home() {
               <div className="w-8 h-8 bg-gradient-to-r from-slate-600 to-blue-600 rounded-lg flex items-center justify-center">
                 <Car className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-slate-700 to-blue-700 bg-clip-text text-transparent">
+              <span className="text-xl font-brand gradient-text-primary">
                 Neopark
               </span>
             </motion.div>
@@ -71,19 +71,17 @@ export default function Home() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-800 mb-6"
+              className="text-4xl sm:text-5xl lg:text-6xl font-display text-slate-800 mb-6 text-shadow-md"
             >
               Smart Parking
-              <span className="block bg-gradient-to-r from-slate-600 to-blue-600 bg-clip-text text-transparent">
-                Intelligence
-              </span>
+              <span className="block gradient-text-primary">Intelligence</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto"
+              className="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto font-body"
             >
               Real-time parking information powered by IoT sensors. Know exactly
               when spots become available without any bookings or reservations.
@@ -176,10 +174,10 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-heading text-slate-800 mb-4 text-shadow-sm">
               How It Works
             </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto font-body">
               Our IoT sensors detect vehicle presence in real-time, providing
               instant parking information without any user interaction required.
             </p>
@@ -243,10 +241,10 @@ export default function Home() {
                 >
                   <feature.icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-800 mb-3">
+                <h3 className="text-xl font-heading text-slate-800 mb-3 text-shadow-sm">
                   {feature.title}
                 </h3>
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-slate-600 leading-relaxed font-body">
                   {feature.description}
                 </p>
               </motion.div>
@@ -264,10 +262,10 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-display text-slate-800 mb-4 text-shadow-sm">
               Simple & Smart
             </h2>
-            <p className="text-lg text-slate-600">
+            <p className="text-lg text-slate-600 font-body">
               No accounts, no bookings, no hassle. Just pure parking
               intelligence.
             </p>
@@ -324,7 +322,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-3xl sm:text-4xl font-bold text-white mb-6"
+            className="text-3xl sm:text-4xl font-display text-white mb-6 text-shadow-sm"
           >
             Ready to Experience Smart Parking?
           </motion.h2>
@@ -333,7 +331,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             viewport={{ once: true }}
-            className="text-xl text-slate-200 mb-8"
+            className="text-xl text-slate-200 mb-8 font-body"
           >
             Join the future of parking intelligence. No accounts needed, just
             pure information.
@@ -358,19 +356,14 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="py-8 px-4 sm:px-6 lg:px-8 bg-slate-800">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 sm:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-r from-slate-400 to-blue-400 rounded-lg flex items-center justify-center">
-                <Car className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">Neopark</span>
-            </div>
-            <p className="text-slate-400 text-sm">
-              © 2024 Neopark. Smart parking intelligence powered by IoT.
-            </p>
+      <footer className="w-full bg-gradient-to-r from-blue-50 to-blue-100 border-t border-blue-100 shadow-inner py-4 fixed bottom-0 left-0 z-40">
+        <div className="max-w-4xl mx-auto flex items-center justify-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+            <Car className="w-5 h-5 text-white" />
           </div>
+          <span className="text-xl font-extrabold text-blue-700 tracking-tight drop-shadow-sm">
+            Neopark
+          </span>
         </div>
       </footer>
     </div>

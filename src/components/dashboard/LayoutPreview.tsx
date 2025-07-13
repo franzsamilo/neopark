@@ -201,7 +201,21 @@ export default function LayoutPreview({
         transition={{ type: "spring", stiffness: 200, damping: 30 }}
         className="fixed inset-0 z-50 flex flex-col items-stretch justify-stretch bg-black/40 backdrop-blur-md"
       >
-        <div className="relative flex flex-col flex-1 w-full h-full max-w-none max-h-none bg-white/80 backdrop-blur-2xl rounded-none shadow-2xl overflow-hidden border-t border-blue-100">
+        <div className="relative flex flex-col flex-1 w-full h-full max-w-none max-h-none bg-white/80 backdrop-blur-2xl rounded-none shadow-2xl overflow-hidden border-t border-blue-100 ring-2 ring-blue-100/30">
+          <div className="flex flex-col items-center pt-8 pb-2 px-4 bg-gradient-to-r from-blue-50/80 to-green-50/80 border-b border-blue-100 shadow-md">
+            <div className="flex items-center gap-3 mb-2">
+              <Car className="w-8 h-8 text-blue-500 drop-shadow-md" />
+              <span className="text-2xl font-brand gradient-text-primary tracking-tight drop-shadow-sm">
+                Neopark
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-display text-gray-800 text-center drop-shadow-sm">
+              {parkingLot.name} Layout
+            </h2>
+            <p className="text-gray-500 text-sm text-center mb-2 font-body">
+              {parkingLot.address}
+            </p>
+          </div>
           <button
             className="absolute top-4 right-4 text-gray-400 hover:text-blue-600 text-2xl font-bold z-10 bg-white/70 rounded-full p-2 shadow-md hover:scale-110 transition-all"
             onClick={onClose}
@@ -209,15 +223,6 @@ export default function LayoutPreview({
           >
             <X className="w-6 h-6" />
           </button>
-          <div className="flex flex-col items-center pt-8 pb-2 px-4">
-            <div className="w-12 h-1.5 bg-blue-100 rounded-full mb-4 sm:hidden" />
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 text-center">
-              {parkingLot.name} Layout
-            </h2>
-            <p className="text-gray-500 text-sm text-center mb-2">
-              {parkingLot.address}
-            </p>
-          </div>
           <div className="relative flex-1 w-full overflow-auto">
             <div className="relative w-full h-full bg-gradient-to-br from-blue-50/80 to-blue-100/80 grid-bg">
               {layoutElements.map((element) => {
@@ -286,11 +291,11 @@ export default function LayoutPreview({
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 80, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed left-0 right-0 bottom-0 sm:static bg-white/90 rounded-t-3xl sm:rounded-xl shadow-2xl border-t border-blue-100 p-4 z-50 max-w-lg mx-auto"
+                className="fixed left-0 right-0 bottom-0 sm:static bg-white/90 rounded-t-3xl sm:rounded-xl shadow-2xl border-t border-blue-100 p-4 z-50 max-w-lg mx-auto ring-2 ring-blue-100/30"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-bold text-blue-700">
-                    Spot Details
+                  <h3 className="text-lg font-heading text-blue-700 flex items-center gap-2 text-shadow-sm">
+                    <Car className="w-5 h-5 text-green-500" /> Spot Details
                   </h3>
                   <button
                     onClick={() => setSelectedSpot(null)}
@@ -302,16 +307,20 @@ export default function LayoutPreview({
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-xs text-gray-500 mb-1">Spot ID</div>
-                    <div className="text-lg font-bold text-gray-800">
+                    <div className="text-xs text-gray-500 mb-1 font-body">
+                      Spot ID
+                    </div>
+                    <div className="text-lg font-mono text-gray-800">
                       {((selectedSpot.properties as Record<string, unknown>)
                         ?.spotId as string) || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-1">Status</div>
+                    <div className="text-xs text-gray-500 mb-1 font-body">
+                      Status
+                    </div>
                     <div
-                      className={`text-lg font-bold ${
+                      className={`text-lg font-heading ${
                         (selectedSpot.properties as Record<string, unknown>)
                           ?.isOccupied
                           ? "text-red-600"
@@ -325,7 +334,7 @@ export default function LayoutPreview({
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-1">
+                    <div className="text-xs text-gray-500 mb-1 font-body">
                       Last Distance
                     </div>
                     <div className="text-lg font-mono text-blue-700">
@@ -335,7 +344,7 @@ export default function LayoutPreview({
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-1">
+                    <div className="text-xs text-gray-500 mb-1 font-body">
                       Last Updated
                     </div>
                     <div className="text-lg font-mono text-blue-700">

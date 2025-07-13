@@ -58,7 +58,7 @@ export default function AuthPage() {
                 <div className="w-8 h-8 bg-gradient-to-r from-slate-600 to-blue-600 rounded-lg flex items-center justify-center">
                   <Car className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-slate-700 to-blue-700 bg-clip-text text-transparent">
+                <span className="text-xl font-brand gradient-text-primary">
                   Neopark
                 </span>
               </motion.div>
@@ -87,13 +87,11 @@ export default function AuthPage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-8"
           >
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-4">
+            <h1 className="text-3xl sm:text-4xl font-display text-slate-800 mb-4 text-shadow-sm">
               Welcome to
-              <span className="block bg-gradient-to-r from-slate-600 to-blue-600 bg-clip-text text-transparent">
-                Neopark
-              </span>
+              <span className="block gradient-text-primary">Neopark</span>
             </h1>
-            <p className="text-slate-600">
+            <p className="text-slate-600 font-body">
               Sign in to access real-time parking intelligence
             </p>
           </motion.div>

@@ -238,44 +238,44 @@ export default function Map({
         className: "custom-popup",
         closeButton: true,
         closeOnClick: false,
-        maxWidth: "320px",
+        maxWidth: "340px",
       }).setHTML(`
-        <div class="p-4 bg-white rounded-2xl shadow-2xl border border-blue-100">
-          <div class="mb-4">
-            <h3 class="text-lg font-bold text-gray-900 mb-2 truncate flex items-center">
-              <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              <span class="truncate">${lot.name}</span>
-            </h3>
-            <div class="flex items-center text-gray-500 text-sm mb-3">
-              <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              <span class="truncate">${lot.address}</span>
-            </div>
+        <div class="p-5 bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-blue-100 flex flex-col gap-4 min-w-[280px]">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <h3 class="text-lg font-display gradient-text-primary truncate flex-1 text-shadow-sm">${
+              lot.name
+            }</h3>
           </div>
-          <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 mb-4">
-            <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center text-gray-500 text-sm mb-2 gap-1 font-body">
+            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span class="truncate">${lot.address}</span>
+          </div>
+          <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-4 mb-2 flex flex-col gap-2 shadow-inner">
+            <div class="flex items-center justify-between mb-1">
               <div class="text-center flex-1">
-                <div class="text-2xl font-bold text-green-600">${availableSpots}</div>
-                <div class="text-xs text-gray-600 font-medium">Available</div>
+                <div class="text-2xl font-heading text-green-600">${availableSpots}</div>
+                <div class="text-xs text-gray-600 font-body">Available</div>
               </div>
-              <div class="w-px h-8 bg-gray-300 mx-3"></div>
+              <div class="w-px h-8 bg-blue-200 mx-3"></div>
               <div class="text-center flex-1">
-                <div class="text-2xl font-bold text-blue-600">${totalSpots}</div>
-                <div class="text-xs text-gray-600 font-medium">Total</div>
+                <div class="text-2xl font-heading text-blue-600">${totalSpots}</div>
+                <div class="text-xs text-gray-600 font-body">Total</div>
               </div>
             </div>
-            <div class="flex items-center justify-between text-xs text-gray-600">
+            <div class="flex items-center justify-between text-xs text-gray-600 font-body">
               <span>Availability</span>
-              <span class="font-semibold">${availabilityPercentage.toFixed(
+              <span class="font-heading">${availabilityPercentage.toFixed(
                 0
               )}%</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+            <div class="w-full bg-blue-100 rounded-full h-2 mt-1">
               <div 
                 class="h-2 rounded-full transition-all duration-500 ${
                   availabilityPercentage > 50
@@ -287,8 +287,8 @@ export default function Map({
                 style="width: ${availabilityPercentage}%"
               ></div>
             </div>
-            <div class="text-center mt-2">
-              <span class="text-xs font-semibold ${
+            <div class="text-center mt-1">
+              <span class="text-xs font-brand ${
                 availabilityPercentage > 50
                   ? "text-green-600"
                   : availabilityPercentage > 20
@@ -297,16 +297,16 @@ export default function Map({
               }">${statusText}</span>
             </div>
           </div>
-          <div class="flex flex-col gap-2">
+          <div class="flex flex-col gap-2 mt-2">
             <button 
               onclick="window.selectParkingLot('${lot.id}')"
-              class="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-base font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center"
+              class="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-base font-heading shadow-lg hover:shadow-xl transform hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              Select Location
+              <span class="font-body">Select Location</span>
             </button>
             ${
               lot.layoutData &&
@@ -315,12 +315,12 @@ export default function Map({
                 ? `
             <button 
               onclick="window.viewLayout('${lot.id}')"
-              class="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 text-base font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center"
+              class="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 text-base font-heading shadow-lg hover:shadow-xl transform hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-400"
             >
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
               </svg>
-              View Layout
+              <span class="font-body">View Layout</span>
             </button>
             `
                 : ""
@@ -409,18 +409,19 @@ export default function Map({
       )}
 
       <div className="absolute top-4 right-4 z-20">
-        <button
+        <Button
           onClick={handleGetCurrentLocation}
           disabled={isLocating}
           className="w-14 h-14 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 flex items-center justify-center hover:bg-white transition-all duration-200 disabled:opacity-50 transform hover:scale-105 active:scale-95"
           title="Get current location"
+          aria-label="Get current location"
         >
           <Compass
             className={`w-6 h-6 text-blue-600 ${
               isLocating ? "animate-spin" : ""
             }`}
           />
-        </button>
+        </Button>
       </div>
 
       <style jsx global>{`
@@ -465,6 +466,24 @@ export default function Map({
         }
       `}</style>
     </div>
+  );
+}
+
+// Add a reusable Button component at the top of the file
+function Button({
+  children,
+  className = "",
+  type = "button",
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type={type}
+      className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 active:scale-95 disabled:opacity-50 ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
   );
 }
 

@@ -56,7 +56,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-40">
+      <div className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-40 ring-2 ring-blue-100/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3 animate-fade-in">
@@ -64,21 +64,22 @@ export default function DashboardPage() {
                 <Car className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gray-800">
+                <h1 className="text-lg sm:text-xl font-brand gradient-text-primary tracking-tight drop-shadow-sm">
                   Neopark
                 </h1>
-                <p className="text-xs text-gray-600">Find parking near you</p>
+                <p className="text-xs text-blue-500 font-body">
+                  Find parking near you
+                </p>
               </div>
             </div>
-
             <div className="hidden md:flex items-center space-x-6 text-sm">
               <div className="text-center">
-                <div className="text-lg font-bold text-green-600">24</div>
-                <div className="text-xs text-gray-600">Available</div>
+                <div className="text-lg font-heading text-green-600">24</div>
+                <div className="text-xs text-gray-600 font-body">Available</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-blue-600">8</div>
-                <div className="text-xs text-gray-600">Lots</div>
+                <div className="text-lg font-heading text-blue-600">8</div>
+                <div className="text-xs text-gray-600 font-body">Lots</div>
               </div>
             </div>
           </div>
