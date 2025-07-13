@@ -130,16 +130,6 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <div className="hidden md:flex items-center space-x-6 text-sm">
-              <div className="text-center">
-                <div className="text-lg font-heading text-green-600">24</div>
-                <div className="text-xs text-gray-600 font-body">Available</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-heading text-blue-600">8</div>
-                <div className="text-xs text-gray-600 font-body">Lots</div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

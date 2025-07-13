@@ -337,7 +337,6 @@ export default function Map({
         maxWidth: "340px",
       }).setHTML(popupHtml);
 
-      // Track open popup and lotId
       popup.on("open", () => {
         openPopupRef.current = { popup, lotId: lot.id };
       });
@@ -469,13 +468,11 @@ export default function Map({
     addParkingLotMarkers(parkingLots);
   }, [parkingLots, isMapLoaded]);
 
-  // Add this effect to update open popup content in real time
   useEffect(() => {
     const { popup, lotId } = openPopupRef.current;
     if (!popup || !lotId) return;
     const lot = parkingLots.find((l) => l.id === lotId);
     if (!lot) return;
-    // Regenerate popup HTML with latest data
     let totalSpots = lot.totalSpots;
     let availableSpots = lot.availableSpots;
     if (lot.layoutElements && Array.isArray(lot.layoutElements)) {
