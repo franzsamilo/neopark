@@ -31,6 +31,9 @@ export default function IoTDeviceManager({
   const { isConnected, lastData } = useWebsocketNeo();
   const [availableDevices, setAvailableDevices] = useState<string[]>([]);
   const [deviceStatus, setDeviceStatus] = useState<Record<string, boolean>>({});
+  const [deviceLastTimestamp, setDeviceLastTimestamp] = useState<
+    Record<string, number>
+  >({});
 
   useEffect(() => {
     const fetchLayout = async () => {
@@ -77,6 +80,10 @@ export default function IoTDeviceManager({
       setDeviceStatus((prev) => ({
         ...prev,
         [lastData.deviceId]: isActive,
+      }));
+      setDeviceLastTimestamp((prev) => ({
+        ...prev,
+        [lastData.deviceId]: lastData.timestamp,
       }));
 
       setLayoutElements((prevElements) => {
@@ -234,39 +241,45 @@ export default function IoTDeviceManager({
               </div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {availableDevices.map((deviceId) => (
-                  <div
-                    key={deviceId}
-                    className="flex items-center justify-between p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-all duration-200"
-                  >
-                    <div className="flex items-center">
-                      <span className="font-mono text-sm font-body">
-                        {deviceId}
-                      </span>
-                      {lastData?.deviceId === deviceId && (
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-brand">
-                          Live
+                {availableDevices.map((deviceId) => {
+                  const now = Date.now();
+                  const isLive =
+                    deviceLastTimestamp[deviceId] &&
+                    now - deviceLastTimestamp[deviceId] < 3000;
+                  return (
+                    <div
+                      key={deviceId}
+                      className="flex items-center justify-between p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex items-center">
+                        <span className="font-mono text-sm font-body">
+                          {deviceId}
                         </span>
-                      )}
+                        {isLive && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-brand">
+                            Live
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {deviceStatus[deviceId] ? (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 text-yellow-500" />
+                        )}
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full font-brand ${
+                            deviceStatus[deviceId]
+                              ? "bg-green-100 text-green-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+                          {deviceStatus[deviceId] ? "Active" : "Inactive"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {deviceStatus[deviceId] ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4 text-yellow-500" />
-                      )}
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full font-brand ${
-                          deviceStatus[deviceId]
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {deviceStatus[deviceId] ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
