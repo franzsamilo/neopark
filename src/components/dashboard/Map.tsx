@@ -450,6 +450,11 @@ export default function Map({
     });
   }, [lastData]);
 
+  useEffect(() => {
+    if (!isMapLoaded) return;
+    addParkingLotMarkers(parkingLots);
+  }, [parkingLots, isMapLoaded]);
+
   return (
     <div className="w-full h-full relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div
