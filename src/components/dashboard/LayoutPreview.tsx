@@ -338,7 +338,7 @@ export default function LayoutPreview({
                     </div>
                     <div className="text-lg font-mono text-blue-700">
                       {((selectedSpot.properties as Record<string, unknown>)
-                        ?.lastDistance as number) ?? "-"}{" "}
+                        ?.lastDistance as number) ?? "-"}
                       cm
                     </div>
                   </div>

@@ -227,7 +227,7 @@ export default function IoTDeviceManager({
                 </p>
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
                   <p className="text-blue-700 text-sm font-body">
-                    <strong>Connection Status:</strong>{" "}
+                    <strong>Connection Status:</strong>
                     {isConnected ? "Connected" : "Disconnected"}
                   </p>
                 </div>

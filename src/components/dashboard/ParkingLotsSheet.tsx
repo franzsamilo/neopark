@@ -170,7 +170,7 @@ export default function ParkingLotsSheet({
                         <span className="mx-1 text-gray-400">/</span>
                         <span className="font-bold text-gray-700">
                           {lot.totalSpots}
-                        </span>{" "}
+                        </span>
                         spots
                       </span>
                       <span

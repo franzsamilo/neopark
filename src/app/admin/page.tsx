@@ -14,6 +14,7 @@ import {
   Edit,
   Trash2,
   Wifi,
+  Shield,
 } from "lucide-react";
 import type { ParkingLot } from "@/constants/types/parking";
 import useWebsocketNeo from "@/hooks/useWebsocketNeo";
@@ -132,6 +133,7 @@ export default function AdminPage() {
     { id: "map", label: "Map Management", icon: MapPin },
     { id: "lots", label: "Parking Lots", icon: Building },
     { id: "iot", label: "IoT Devices", icon: Wifi },
+    { id: "admins", label: "Parking Lot Admins", icon: Shield },
     { id: "users", label: "Users", icon: Users },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "settings", label: "Settings", icon: Settings },
@@ -153,22 +155,6 @@ export default function AdminPage() {
                 <p className="text-xs text-blue-500 font-body">
                   Manage parking infrastructure
                 </p>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center space-x-6 text-sm">
-              <div className="text-center">
-                <div className="text-lg font-heading text-green-600">
-                  {parkingLots.length}
-                </div>
-                <div className="text-xs text-gray-600 font-body">Lots</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-heading text-blue-600">
-                  {parkingLots.reduce((sum, lot) => sum + lot.totalSpots, 0)}
-                </div>
-                <div className="text-xs text-gray-600 font-body">
-                  Total Spots
-                </div>
               </div>
             </div>
           </div>
@@ -273,7 +259,7 @@ export default function AdminPage() {
                           <span className="mx-1 text-gray-400">/</span>
                           <span className="font-bold text-gray-700">
                             {lot.totalSpots}
-                          </span>{" "}
+                          </span>
                           spots available
                         </span>
                         <div className="flex items-center space-x-2">
@@ -373,7 +359,7 @@ export default function AdminPage() {
                         <span className="text-sm font-body">
                           <span className="font-bold text-purple-700">
                             {lot.totalSpots}
-                          </span>{" "}
+                          </span>
                           parking spaces available for IoT assignment
                         </span>
                         <button
@@ -394,34 +380,115 @@ export default function AdminPage() {
             </div>
           )}
 
+          {activeTab === "admins" && (
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-display gradient-text-primary tracking-tight flex items-center">
+                    <Shield className="w-6 h-6 mr-2 text-orange-500" />
+                    Parking Lot Admins
+                  </h2>
+                  <p className="text-sm text-gray-600 font-body mt-1">
+                    Manage admin permissions for parking lots
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Shield className="w-10 h-10 text-orange-500" />
+                </div>
+                <p className="text-gray-500 text-lg font-medium mb-2 font-display">
+                  Coming Soon
+                </p>
+                <p className="text-gray-400 text-sm font-body">
+                  Admin management features will be available in a future update
+                </p>
+              </div>
+            </div>
+          )}
+
           {activeTab === "users" && (
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-8">
-                User Management
-              </h2>
-              <p className="text-gray-600">
-                User management interface coming soon...
-              </p>
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-display gradient-text-primary tracking-tight flex items-center">
+                    <Users className="w-6 h-6 mr-2 text-blue-500" />
+                    User Management
+                  </h2>
+                  <p className="text-sm text-gray-600 font-body mt-1">
+                    Manage user accounts and permissions
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Users className="w-10 h-10 text-blue-500" />
+                </div>
+                <p className="text-gray-500 text-lg font-medium mb-2 font-display">
+                  Coming Soon
+                </p>
+                <p className="text-gray-400 text-sm font-body">
+                  User management features will be available in a future update
+                </p>
+              </div>
             </div>
           )}
 
           {activeTab === "analytics" && (
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-8">
-                Analytics
-              </h2>
-              <p className="text-gray-600">
-                Analytics dashboard coming soon...
-              </p>
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-display gradient-text-primary tracking-tight flex items-center">
+                    <BarChart3 className="w-6 h-6 mr-2 text-green-500" />
+                    Analytics
+                  </h2>
+                  <p className="text-sm text-gray-600 font-body mt-1">
+                    View parking analytics and insights
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <BarChart3 className="w-10 h-10 text-green-500" />
+                </div>
+                <p className="text-gray-500 text-lg font-medium mb-2 font-display">
+                  Coming Soon
+                </p>
+                <p className="text-gray-400 text-sm font-body">
+                  Analytics dashboard will be available in a future update
+                </p>
+              </div>
             </div>
           )}
 
           {activeTab === "settings" && (
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-8">
-                Settings
-              </h2>
-              <p className="text-gray-600">Admin settings coming soon...</p>
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-display gradient-text-primary tracking-tight flex items-center">
+                    <Settings className="w-6 h-6 mr-2 text-gray-500" />
+                    Settings
+                  </h2>
+                  <p className="text-sm text-gray-600 font-body mt-1">
+                    Configure admin system settings
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Settings className="w-10 h-10 text-gray-500" />
+                </div>
+                <p className="text-gray-500 text-lg font-medium mb-2 font-display">
+                  Coming Soon
+                </p>
+                <p className="text-gray-400 text-sm font-body">
+                  Admin settings will be available in a future update
+                </p>
+              </div>
             </div>
           )}
         </div>
