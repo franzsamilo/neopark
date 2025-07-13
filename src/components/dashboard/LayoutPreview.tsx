@@ -283,7 +283,6 @@ export default function LayoutPreview({
               `}</style>
             </div>
           </div>
-          {/* Spot details sheet */}
           <AnimatePresence>
             {selectedSpot && (
               <motion.div
