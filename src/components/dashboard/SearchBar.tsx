@@ -8,7 +8,6 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-// Add a reusable Button component at the top of the file
 function Button({
   children,
   className = "",

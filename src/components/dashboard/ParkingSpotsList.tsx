@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { MapPin, Car, ChevronUp, ChevronDown, Search } from "lucide-react";
 import { ParkingLot } from "@/constants/types/parking";
+import useWebsocketNeo from "@/hooks/useWebsocketNeo";
 
 interface ParkingSpotsListProps {
   searchQuery?: string;
@@ -11,7 +12,6 @@ interface ParkingSpotsListProps {
   selectedLot?: ParkingLot | null;
 }
 
-// Add a reusable Button component at the top of the file
 function Button({
   children,
   className = "",
@@ -38,6 +38,7 @@ export default function ParkingSpotsList({
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const { lastData } = useWebsocketNeo();
 
   useEffect(() => {
     const loadParkingLots = async () => {
@@ -61,6 +62,62 @@ export default function ParkingSpotsList({
     const interval = setInterval(loadParkingLots, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!lastData) return;
+    setParkingLots((prevLots) => {
+      let updated = false;
+      const newLots = prevLots.map((lot) => {
+        if (!lot.layoutElements || !Array.isArray(lot.layoutElements))
+          return lot;
+        let lotChanged = false;
+        const newLayout = lot.layoutElements.map((el) => {
+          if (
+            el.elementType === "PARKING_SPACE" &&
+            (el.properties as Record<string, unknown>)?.deviceId ===
+              lastData.deviceId
+          ) {
+            const props = el.properties as Record<string, unknown>;
+            const threshold = (props?.sensorThreshold as number) ?? 50;
+            const isOccupied =
+              lastData.distance > 0 && lastData.distance < threshold;
+            if (props?.isOccupied !== isOccupied) {
+              lotChanged = true;
+              updated = true;
+              return {
+                ...el,
+                properties: {
+                  ...props,
+                  isOccupied,
+                  lastDistance: lastData.distance,
+                  lastUpdated: lastData.timestamp,
+                },
+              };
+            }
+          }
+          return el;
+        });
+        if (lotChanged) {
+          const totalSpots = newLayout.filter(
+            (e) => e.elementType === "PARKING_SPACE"
+          ).length;
+          const availableSpots = newLayout.filter(
+            (e) =>
+              e.elementType === "PARKING_SPACE" &&
+              !(e.properties as Record<string, unknown>)?.isOccupied
+          ).length;
+          return {
+            ...lot,
+            layoutElements: newLayout,
+            totalSpots,
+            availableSpots,
+          };
+        }
+        return lot;
+      });
+      return updated ? newLots : prevLots;
+    });
+  }, [lastData]);
 
   const filteredLots = parkingLots.filter(
     (lot) =>

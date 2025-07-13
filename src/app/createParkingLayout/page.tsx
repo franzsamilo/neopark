@@ -272,7 +272,7 @@ function CreateParkingLayoutContent() {
 
       const angle =
         (Math.atan2(mouseY - centerY, mouseX - centerX) * 180) / Math.PI;
-      const snappedAngle = Math.round(angle / 15) * 15; // Snap to 15-degree increments
+      const snappedAngle = Math.round(angle / 15) * 15;
 
       const updatedElement = {
         ...selectedElement,
@@ -548,16 +548,13 @@ function CreateParkingLayoutContent() {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-100 via-white to-indigo-100 flex flex-col">
       <div className="flex flex-col md:flex-row gap-6 p-4 md:p-8">
-        {/* Left Panel: Tools & Properties */}
         <motion.div
           initial={{ x: -40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 30 }}
           className="w-full md:w-80 bg-white/80 backdrop-blur-2xl rounded-2xl shadow-xl border border-blue-100 p-6 flex flex-col gap-6 mb-4 md:mb-0"
         >
-          {/* Toolbar */}
           <div className="flex flex-wrap gap-2 mb-4">
-            {/* Tool buttons with icons, tooltips, and active state */}
             {tools.map((tool) => {
               const Icon = tool.icon;
               return (
@@ -574,7 +571,6 @@ function CreateParkingLayoutContent() {
               );
             })}
           </div>
-          {/* Undo/Redo/Save */}
           <div className="flex gap-2 mb-4">
             <button
               className="p-2 rounded-lg bg-white shadow hover:bg-blue-50 transition-all"
@@ -598,7 +594,6 @@ function CreateParkingLayoutContent() {
               <Save />
             </button>
           </div>
-          {/* Properties Panel (for selected element) */}
           {selectedElement && (
             <div className="bg-white/90 rounded-xl p-4 shadow border border-blue-50">
               <h4 className="font-semibold text-blue-700 mb-2">
@@ -701,7 +696,6 @@ function CreateParkingLayoutContent() {
               </div>
             </div>
           )}
-          {/* Stats & Tips (as before, but glassy) */}
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-3">
               Statistics
@@ -748,7 +742,6 @@ function CreateParkingLayoutContent() {
             </ul>
           </div>
         </motion.div>
-        {/* Right Panel: Canvas */}
         <motion.div
           initial={{ x: 40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}

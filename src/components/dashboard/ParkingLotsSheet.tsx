@@ -11,7 +11,7 @@ interface ParkingLotsSheetProps {
   isLoading?: boolean;
 }
 
-const SNAP_POINTS = [0.15, 0.5, 0.92]; // collapsed, mid, expanded (percent of viewport height)
+const SNAP_POINTS = [0.15, 0.5, 0.92];
 
 export default function ParkingLotsSheet({
   parkingLots,
@@ -19,17 +19,15 @@ export default function ParkingLotsSheet({
   isLoading = false,
 }: ParkingLotsSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
-  const [snapIndex, setSnapIndex] = useState(1); // start at mid
+  const [snapIndex, setSnapIndex] = useState(1);
   const y = useMotionValue(0);
   const [viewportHeight, setViewportHeight] = useState(0);
 
-  // Calculate snap positions in px
   const getSnapPositions = () => {
     const vh = viewportHeight || window.innerHeight;
     return SNAP_POINTS.map((p) => vh * (1 - p));
   };
 
-  // Set initial position on mount
   React.useEffect(() => {
     setViewportHeight(window.innerHeight);
     const onResize = () => setViewportHeight(window.innerHeight);
@@ -42,11 +40,9 @@ export default function ParkingLotsSheet({
     y.set(snapPositions[snapIndex]);
   }, [viewportHeight, snapIndex]);
 
-  // Drag logic
   const handleDragEnd = (_e: unknown, info: { point: { y: number } }) => {
     const snapPositions = getSnapPositions();
     const current = info.point.y;
-    // Find the closest snap point
     let closest = 0;
     let minDist = Math.abs(current - snapPositions[0]);
     for (let i = 1; i < snapPositions.length; i++) {

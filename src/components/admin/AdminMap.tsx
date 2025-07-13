@@ -5,6 +5,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { X, Edit, Trash2, MapPin, Plus, Save } from "lucide-react";
 import { ParkingLot, NewParkingLotData } from "@/constants/types/parking";
+import useWebsocketNeo from "@/hooks/useWebsocketNeo";
 
 interface AdminMapProps {
   onParkingLayoutCreate: (lotId: string) => void;
@@ -37,6 +38,7 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
     lng: number;
   } | null>(null);
   const [selectedLot, setSelectedLot] = useState<ParkingLot | null>(null);
+  const { lastData } = useWebsocketNeo();
 
   useEffect(() => {
     isCreatingLotRef.current = isCreatingLot;
@@ -255,6 +257,62 @@ export default function AdminMap({ onParkingLayoutCreate }: AdminMapProps) {
       addParkingLotMarkers(parkingLots);
     }
   }, [parkingLots, isMapLoaded]);
+
+  useEffect(() => {
+    if (!lastData) return;
+    setParkingLots((prevLots) => {
+      let updated = false;
+      const newLots = prevLots.map((lot) => {
+        if (!lot.layoutElements || !Array.isArray(lot.layoutElements))
+          return lot;
+        let lotChanged = false;
+        const newLayout = lot.layoutElements.map((el) => {
+          if (
+            el.elementType === "PARKING_SPACE" &&
+            (el.properties as Record<string, unknown>)?.deviceId ===
+              lastData.deviceId
+          ) {
+            const props = el.properties as Record<string, unknown>;
+            const threshold = (props?.sensorThreshold as number) ?? 50;
+            const isOccupied =
+              lastData.distance > 0 && lastData.distance < threshold;
+            if (props?.isOccupied !== isOccupied) {
+              lotChanged = true;
+              updated = true;
+              return {
+                ...el,
+                properties: {
+                  ...props,
+                  isOccupied,
+                  lastDistance: lastData.distance,
+                  lastUpdated: lastData.timestamp,
+                },
+              };
+            }
+          }
+          return el;
+        });
+        if (lotChanged) {
+          const totalSpots = newLayout.filter(
+            (e) => e.elementType === "PARKING_SPACE"
+          ).length;
+          const availableSpots = newLayout.filter(
+            (e) =>
+              e.elementType === "PARKING_SPACE" &&
+              !(e.properties as Record<string, unknown>)?.isOccupied
+          ).length;
+          return {
+            ...lot,
+            layoutElements: newLayout,
+            totalSpots,
+            availableSpots,
+          };
+        }
+        return lot;
+      });
+      return updated ? newLots : prevLots;
+    });
+  }, [lastData]);
 
   return (
     <div className="h-full relative bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">

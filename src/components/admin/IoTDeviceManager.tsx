@@ -173,7 +173,6 @@ export default function IoTDeviceManager({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Available Devices */}
           <div className="bg-gray-50 rounded-xl p-4">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <Wifi
@@ -240,7 +239,6 @@ export default function IoTDeviceManager({
             )}
           </div>
 
-          {/* Parking Spaces */}
           <div className="bg-gray-50 rounded-xl p-4">
             <h3 className="text-lg font-semibold mb-4">
               Parking Spaces
@@ -295,11 +293,20 @@ export default function IoTDeviceManager({
                         className="border rounded px-3 py-1 text-sm bg-white"
                       >
                         <option value="">No device</option>
-                        {availableDevices.map((deviceId) => (
-                          <option key={deviceId} value={deviceId}>
-                            {deviceId}
-                          </option>
-                        ))}
+                        {availableDevices
+                          .filter(
+                            (deviceId) =>
+                              !Object.entries(deviceAssignments).some(
+                                ([otherSpotId, assignedDeviceId]) =>
+                                  otherSpotId !== spotId &&
+                                  assignedDeviceId === deviceId
+                              ) || deviceId === currentDeviceId
+                          )
+                          .map((deviceId) => (
+                            <option key={deviceId} value={deviceId}>
+                              {deviceId}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   );
@@ -309,7 +316,6 @@ export default function IoTDeviceManager({
           </div>
         </div>
 
-        {/* Assignment Summary */}
         <div className="bg-blue-50 rounded-xl p-4 mb-6">
           <h4 className="font-semibold text-blue-800 mb-2">
             Assignment Summary

@@ -28,7 +28,7 @@ export default function Home() {
   }, [session, router]);
 
   if (status === "loading" || session) {
-    return null; // or a spinner if you want
+    return null;
   }
 
   return (
