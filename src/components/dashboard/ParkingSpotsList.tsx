@@ -3,12 +3,30 @@
 import { useState, useEffect } from "react";
 import { MapPin, Car, ChevronUp, ChevronDown, Search } from "lucide-react";
 import { ParkingLot } from "@/constants/types/parking";
+import useWebsocketNeo from "@/hooks/useWebsocketNeo";
 
 interface ParkingSpotsListProps {
   searchQuery?: string;
   onParkingLotSelect?: (lot: ParkingLot) => void;
   onNav?: (lot: ParkingLot) => void;
   selectedLot?: ParkingLot | null;
+}
+
+function Button({
+  children,
+  className = "",
+  type = "button",
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type={type}
+      className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 active:scale-95 disabled:opacity-50 ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
 }
 
 export default function ParkingSpotsList({
@@ -20,6 +38,7 @@ export default function ParkingSpotsList({
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const { lastData } = useWebsocketNeo();
 
   useEffect(() => {
     const loadParkingLots = async () => {
@@ -43,6 +62,62 @@ export default function ParkingSpotsList({
     const interval = setInterval(loadParkingLots, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!lastData) return;
+    setParkingLots((prevLots) => {
+      let updated = false;
+      const newLots = prevLots.map((lot) => {
+        if (!lot.layoutElements || !Array.isArray(lot.layoutElements))
+          return lot;
+        let lotChanged = false;
+        const newLayout = lot.layoutElements.map((el) => {
+          if (
+            el.elementType === "PARKING_SPACE" &&
+            (el.properties as Record<string, unknown>)?.deviceId ===
+              lastData.deviceId
+          ) {
+            const props = el.properties as Record<string, unknown>;
+            const threshold = (props?.sensorThreshold as number) ?? 50;
+            const isOccupied =
+              lastData.distance > 0 && lastData.distance < threshold;
+            if (props?.isOccupied !== isOccupied) {
+              lotChanged = true;
+              updated = true;
+              return {
+                ...el,
+                properties: {
+                  ...props,
+                  isOccupied,
+                  lastDistance: lastData.distance,
+                  lastUpdated: lastData.timestamp,
+                },
+              };
+            }
+          }
+          return el;
+        });
+        if (lotChanged) {
+          const totalSpots = newLayout.filter(
+            (e) => e.elementType === "PARKING_SPACE"
+          ).length;
+          const availableSpots = newLayout.filter(
+            (e) =>
+              e.elementType === "PARKING_SPACE" &&
+              !(e.properties as Record<string, unknown>)?.isOccupied
+          ).length;
+          return {
+            ...lot,
+            layoutElements: newLayout,
+            totalSpots,
+            availableSpots,
+          };
+        }
+        return lot;
+      });
+      return updated ? newLots : prevLots;
+    });
+  }, [lastData]);
 
   const filteredLots = parkingLots.filter(
     (lot) =>
@@ -83,22 +158,24 @@ export default function ParkingSpotsList({
   };
 
   return (
-    <div className="bg-white rounded-t-3xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out border border-gray-100 max-w-md mx-auto w-full">
+    <div className="bg-white/90 rounded-t-3xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out border border-blue-100 max-w-md mx-auto w-full ring-2 ring-blue-100/30">
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-4 relative">
         <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-16 h-1.5 bg-white/40 rounded-full"></div>
         <div className="flex items-center justify-between mt-3">
           <div className="flex-1">
-            <h2 className="text-lg font-bold text-white">Nearby Parking</h2>
-            <p className="text-blue-100 text-xs">
+            <h2 className="text-lg font-display gradient-text-primary tracking-tight">
+              Nearby Parking
+            </h2>
+            <p className="text-blue-100 text-xs font-body">
               {isLoading
                 ? "Loading..."
                 : `${filteredLots.length} locations found`}
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            <button
+            <Button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-white hover:text-blue-100 transition-colors p-2 rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="text-white hover:text-blue-100 transition-colors p-2 rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-transparent shadow-none"
               aria-label={isExpanded ? "Collapse list" : "Expand list"}
             >
               {isExpanded ? (
@@ -106,7 +183,7 @@ export default function ParkingSpotsList({
               ) : (
                 <ChevronUp className="w-6 h-6" />
               )}
-            </button>
+            </Button>
             <div className="hidden sm:flex items-center space-x-2 text-white">
               <Car className="w-5 h-5" />
               <span className="text-sm font-medium">Parking</span>
@@ -157,9 +234,9 @@ export default function ParkingSpotsList({
                 const estimatedTime = calculateEstimatedTime(distance);
                 const isSelected = selectedLot && lot.id === selectedLot.id;
                 return (
-                  <button
+                  <Button
                     key={lot.id}
-                    className={`w-full text-left border border-gray-100 rounded-2xl transition-all duration-200 cursor-pointer flex items-center px-4 py-3 shadow-sm bg-white hover:bg-blue-50 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-300 ${
+                    className={`w-full text-left border border-blue-100 rounded-2xl transition-all duration-200 cursor-pointer flex items-center px-4 py-4 shadow-md bg-white/80 hover:bg-blue-50 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-300 ${
                       isSelected ? "ring-2 ring-blue-400 bg-blue-50" : ""
                     } ${isDragging ? "pointer-events-none" : ""}`}
                     onClick={() => {
@@ -167,14 +244,16 @@ export default function ParkingSpotsList({
                         onParkingLotSelect?.(lot);
                       }
                     }}
+                    aria-label={`Select parking lot ${lot.name}`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-gray-800 text-base mb-0 truncate">
+                        <h3 className="font-heading text-blue-800 text-base mb-0 truncate flex items-center gap-1 text-shadow-sm">
+                          <Car className="w-4 h-4 text-green-500" />
                           {lot.name}
                         </h3>
                         <span
-                          className={`ml-2 text-xs font-semibold ${getAvailabilityColor(
+                          className={`ml-2 text-xs font-brand ${getAvailabilityColor(
                             lot.availableSpots,
                             lot.totalSpots
                           )}`}
@@ -182,19 +261,15 @@ export default function ParkingSpotsList({
                           {lot.availableSpots}/{lot.totalSpots}
                         </span>
                       </div>
-                      <div className="flex items-center text-xs text-gray-600 mb-1">
+                      <div className="flex items-center text-xs text-gray-600 mb-1 font-body">
                         <span>{lot.address}</span>
                       </div>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-xs text-gray-500">
-                          {distance}
-                        </span>
-                        <span className="text-xs text-gray-300">•</span>
-                        <span className="text-xs text-gray-500">
-                          {estimatedTime} away
-                        </span>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 font-body">
+                        <span>{distance}</span>
+                        <span className="text-gray-300">•</span>
+                        <span>{estimatedTime} away</span>
                         <span
-                          className={`ml-2 text-xs font-medium ${getAvailabilityColor(
+                          className={`ml-2 text-xs font-brand ${getAvailabilityColor(
                             lot.availableSpots,
                             lot.totalSpots
                           )}`}
@@ -207,12 +282,12 @@ export default function ParkingSpotsList({
                       </div>
                     </div>
                     <div className="ml-4 flex-shrink-0 flex flex-col items-center">
-                      <Car className="w-7 h-7 text-blue-500 mb-1" />
-                      <span className="text-xs text-blue-600 font-bold">
+                      <Car className="w-7 h-7 text-blue-400 mb-1 drop-shadow-md" />
+                      <span className="text-xs text-blue-600 font-brand uppercase tracking-widest">
                         Go
                       </span>
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>

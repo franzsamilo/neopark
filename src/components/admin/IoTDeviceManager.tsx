@@ -31,6 +31,9 @@ export default function IoTDeviceManager({
   const { isConnected, lastData } = useWebsocketNeo();
   const [availableDevices, setAvailableDevices] = useState<string[]>([]);
   const [deviceStatus, setDeviceStatus] = useState<Record<string, boolean>>({});
+  const [deviceLastTimestamp, setDeviceLastTimestamp] = useState<
+    Record<string, number>
+  >({});
 
   useEffect(() => {
     const fetchLayout = async () => {
@@ -78,6 +81,40 @@ export default function IoTDeviceManager({
         ...prev,
         [lastData.deviceId]: isActive,
       }));
+      setDeviceLastTimestamp((prev) => ({
+        ...prev,
+        [lastData.deviceId]: lastData.timestamp,
+      }));
+
+      setLayoutElements((prevElements) => {
+        let updated = false;
+        const newElements = prevElements.map((element) => {
+          if (
+            element.elementType === LayoutElementType.PARKING_SPACE &&
+            (element.properties as Record<string, unknown>)?.deviceId ===
+              lastData.deviceId
+          ) {
+            const props = element.properties as Record<string, unknown>;
+            const threshold = (props?.sensorThreshold as number) ?? 50;
+            const isOccupied =
+              lastData.distance > 0 && lastData.distance < threshold;
+            if (props?.isOccupied !== isOccupied) {
+              updated = true;
+              return {
+                ...element,
+                properties: {
+                  ...props,
+                  isOccupied,
+                  lastDistance: lastData.distance,
+                  lastUpdated: lastData.timestamp,
+                },
+              };
+            }
+          }
+          return element;
+        });
+        return updated ? newElements : prevElements;
+      });
     }
   }, [lastData, availableDevices]);
 
@@ -155,34 +192,33 @@ export default function IoTDeviceManager({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-6 max-w-6xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6 max-w-6xl w-full max-h-[90vh] overflow-hidden ring-2 ring-blue-100/30">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+            <h2 className="text-2xl font-display gradient-text-primary tracking-tight flex items-center">
               <Wifi className="w-6 h-6 mr-2 text-blue-500" />
               IoT Device Management
             </h2>
-            <p className="text-gray-600 mt-1">{parkingLot.name}</p>
+            <p className="text-gray-600 mt-1 font-body">{parkingLot.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors hover:scale-105"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Available Devices */}
-          <div className="bg-gray-50 rounded-xl p-4">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100/50 shadow-lg">
+            <h3 className="text-lg font-display mb-4 flex items-center">
               <Wifi
                 className={`w-5 h-5 mr-2 ${
                   isConnected ? "text-green-500" : "text-red-500"
                 }`}
               />
               Available IoT Devices
-              <span className="ml-2 text-sm text-gray-500">
+              <span className="ml-2 text-sm text-gray-500 font-body">
                 ({availableDevices.length} devices)
               </span>
             </h3>
@@ -190,61 +226,68 @@ export default function IoTDeviceManager({
             {availableDevices.length === 0 ? (
               <div className="text-center py-8">
                 <Wifi className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium mb-2">
+                <p className="text-gray-500 font-medium mb-2 font-display">
                   No IoT devices detected
                 </p>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-400 text-sm font-body">
                   Make sure your IoT sensors are powered on and connected
                 </p>
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-blue-700 text-sm">
-                    <strong>Connection Status:</strong>{" "}
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="text-blue-700 text-sm font-body">
+                    <strong>Connection Status:</strong>
                     {isConnected ? "Connected" : "Disconnected"}
                   </p>
                 </div>
               </div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {availableDevices.map((deviceId) => (
-                  <div
-                    key={deviceId}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg border"
-                  >
-                    <div className="flex items-center">
-                      <span className="font-mono text-sm">{deviceId}</span>
-                      {lastData?.deviceId === deviceId && (
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                          Live
+                {availableDevices.map((deviceId) => {
+                  const now = Date.now();
+                  const isLive =
+                    deviceLastTimestamp[deviceId] &&
+                    now - deviceLastTimestamp[deviceId] < 3000;
+                  return (
+                    <div
+                      key={deviceId}
+                      className="flex items-center justify-between p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex items-center">
+                        <span className="font-mono text-sm font-body">
+                          {deviceId}
                         </span>
-                      )}
+                        {isLive && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-brand">
+                            Live
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {deviceStatus[deviceId] ? (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 text-yellow-500" />
+                        )}
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full font-brand ${
+                            deviceStatus[deviceId]
+                              ? "bg-green-100 text-green-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+                          {deviceStatus[deviceId] ? "Active" : "Inactive"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {deviceStatus[deviceId] ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4 text-yellow-500" />
-                      )}
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          deviceStatus[deviceId]
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {deviceStatus[deviceId] ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Parking Spaces */}
-          <div className="bg-gray-50 rounded-xl p-4">
-            <h3 className="text-lg font-semibold mb-4">
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100/50 shadow-lg">
+            <h3 className="text-lg font-display mb-4">
               Parking Spaces
-              <span className="ml-2 text-sm text-gray-500">
+              <span className="ml-2 text-sm text-gray-500 font-body">
                 ({parkingSpaces.length} spaces)
               </span>
             </h3>
@@ -252,10 +295,10 @@ export default function IoTDeviceManager({
             {parkingSpaces.length === 0 ? (
               <div className="text-center py-8">
                 <Settings className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium mb-2">
+                <p className="text-gray-500 font-medium mb-2 font-display">
                   No parking spaces found
                 </p>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-400 text-sm font-body">
                   Create a parking layout first to assign IoT devices
                 </p>
               </div>
@@ -272,7 +315,7 @@ export default function IoTDeviceManager({
                   return (
                     <div
                       key={space.id}
-                      className="flex items-center justify-between p-3 bg-white rounded-lg border"
+                      className="flex items-center justify-between p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-green-100 shadow-sm hover:shadow-md transition-all duration-200"
                     >
                       <div className="flex items-center space-x-3">
                         <div
@@ -280,9 +323,11 @@ export default function IoTDeviceManager({
                             isOccupied ? "bg-red-500" : "bg-green-500"
                           }`}
                         ></div>
-                        <span className="font-semibold">{spotId}</span>
+                        <span className="font-semibold font-body">
+                          {spotId}
+                        </span>
                         {currentDeviceId && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-brand">
                             IoT: {currentDeviceId}
                           </span>
                         )}
@@ -292,14 +337,23 @@ export default function IoTDeviceManager({
                         onChange={(e) =>
                           handleDeviceAssignment(spotId, e.target.value)
                         }
-                        className="border rounded px-3 py-1 text-sm bg-white"
+                        className="border rounded-lg px-3 py-1 text-sm bg-white/90 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       >
                         <option value="">No device</option>
-                        {availableDevices.map((deviceId) => (
-                          <option key={deviceId} value={deviceId}>
-                            {deviceId}
-                          </option>
-                        ))}
+                        {availableDevices
+                          .filter(
+                            (deviceId) =>
+                              !Object.entries(deviceAssignments).some(
+                                ([otherSpotId, assignedDeviceId]) =>
+                                  otherSpotId !== spotId &&
+                                  assignedDeviceId === deviceId
+                              ) || deviceId === currentDeviceId
+                          )
+                          .map((deviceId) => (
+                            <option key={deviceId} value={deviceId}>
+                              {deviceId}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   );
@@ -309,35 +363,34 @@ export default function IoTDeviceManager({
           </div>
         </div>
 
-        {/* Assignment Summary */}
-        <div className="bg-blue-50 rounded-xl p-4 mb-6">
-          <h4 className="font-semibold text-blue-800 mb-2">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-6 border border-blue-100/50 shadow-lg">
+          <h4 className="font-display text-blue-800 mb-4">
             Assignment Summary
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-heading text-blue-600">
                 {parkingSpaces.length}
               </div>
-              <div className="text-blue-700">Total Spaces</div>
+              <div className="text-blue-700 font-body">Total Spaces</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-heading text-green-600">
                 {Object.keys(deviceAssignments).length}
               </div>
-              <div className="text-green-700">Assigned</div>
+              <div className="text-green-700 font-body">Assigned</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-600">
+              <div className="text-2xl font-heading text-gray-600">
                 {parkingSpaces.length - Object.keys(deviceAssignments).length}
               </div>
-              <div className="text-gray-700">Unassigned</div>
+              <div className="text-gray-700 font-body">Unassigned</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-2xl font-heading text-purple-600">
                 {availableDevices.length}
               </div>
-              <div className="text-purple-700">Available Devices</div>
+              <div className="text-purple-700 font-body">Available Devices</div>
             </div>
           </div>
         </div>
@@ -345,14 +398,14 @@ export default function IoTDeviceManager({
         <div className="flex justify-end space-x-3">
           <button
             onClick={onClose}
-            className="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-body"
           >
             Cancel
           </button>
           <button
             onClick={saveAssignments}
             disabled={saving}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center disabled:opacity-50"
+            className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center disabled:opacity-50 font-semibold shadow-lg hover:shadow-xl"
           >
             {saving ? (
               <>

@@ -8,6 +8,23 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
+function Button({
+  children,
+  className = "",
+  type = "button",
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type={type}
+      className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 active:scale-95 disabled:opacity-50 ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function SearchBar({
   onSearch,
   placeholder = "Search for parking...",
@@ -64,6 +81,8 @@ export default function SearchBar({
         className={`flex items-center bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-xl transition-all duration-300 focus-within:scale-[1.03] focus-within:shadow-2xl ${
           isFocused ? "ring-2 ring-blue-400" : ""
         }`}
+        role="search"
+        aria-label="Search for parking lots"
       >
         <div className="pl-4 flex items-center">
           {isSearching ? (
@@ -79,36 +98,38 @@ export default function SearchBar({
           placeholder={placeholder}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className="flex-1 bg-transparent outline-none border-none px-4 py-4 text-white placeholder-white/70 font-medium text-base sm:text-lg focus:ring-0"
+          className="flex-1 bg-transparent outline-none border-none px-4 py-4 text-white placeholder-white/70 font-body text-base sm:text-lg focus:ring-0"
+          aria-label="Search input"
         />
         {query && (
-          <button
+          <Button
             type="button"
             onClick={handleClear}
-            className="p-2 text-white/70 hover:text-white hover:bg-blue-400/30 rounded-xl transition-all duration-200"
+            className="p-2 text-white/70 hover:text-white hover:bg-blue-400/30 rounded-xl"
             aria-label="Clear search"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
           onClick={handleUseCurrentLocation}
           disabled={isLocating}
-          className="p-3 mr-2 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-3 mr-2 bg-white/20 hover:bg-white/30 text-white rounded-xl shadow-md hover:shadow-lg"
           title="Use current location"
+          aria-label="Use current location"
         >
           {isLocating ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
             <MapPin className="w-5 h-5" />
           )}
-        </button>
+        </Button>
       </form>
       {query && !isSearching && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in-up">
           <div className="p-2">
-            <div className="text-xs text-gray-500 px-3 py-2 font-semibold">
+            <div className="text-xs text-gray-500 px-3 py-2 font-heading">
               Recent searches
             </div>
             <div className="space-y-1">
@@ -123,7 +144,7 @@ export default function SearchBar({
                     className="w-full text-left px-3 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 flex items-center space-x-2"
                   >
                     <Search className="w-4 h-4 text-gray-400" />
-                    <span>{suggestion}</span>
+                    <span className="font-body">{suggestion}</span>
                   </button>
                 )
               )}
@@ -135,9 +156,7 @@ export default function SearchBar({
         <div className="absolute top-full left-0 right-0 mt-2 bg-blue-500 text-white px-4 py-2 rounded-xl shadow-lg animate-fade-in-up">
           <div className="flex items-center space-x-2">
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span className="text-sm font-medium">
-              Searching for parking...
-            </span>
+            <span className="text-sm font-body">Searching for parking...</span>
           </div>
         </div>
       )}

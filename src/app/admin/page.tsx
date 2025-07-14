@@ -14,8 +14,10 @@ import {
   Edit,
   Trash2,
   Wifi,
+  Shield,
 } from "lucide-react";
 import type { ParkingLot } from "@/constants/types/parking";
+import useWebsocketNeo from "@/hooks/useWebsocketNeo";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -28,6 +30,7 @@ export default function AdminPage() {
   const [selectedLotForIoT, setSelectedLotForIoT] = useState<ParkingLot | null>(
     null
   );
+  const { lastData } = useWebsocketNeo();
 
   const handleParkingLayoutCreate = (lotId: string) => {
     setSelectedLotId(lotId);
@@ -64,6 +67,62 @@ export default function AdminPage() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    if (!lastData) return;
+    setParkingLots((prevLots) => {
+      let updated = false;
+      const newLots = prevLots.map((lot) => {
+        if (!lot.layoutElements || !Array.isArray(lot.layoutElements))
+          return lot;
+        let lotChanged = false;
+        const newLayout = lot.layoutElements.map((el) => {
+          if (
+            el.elementType === "PARKING_SPACE" &&
+            (el.properties as Record<string, unknown>)?.deviceId ===
+              lastData.deviceId
+          ) {
+            const props = el.properties as Record<string, unknown>;
+            const threshold = (props?.sensorThreshold as number) ?? 50;
+            const isOccupied =
+              lastData.distance > 0 && lastData.distance < threshold;
+            if (props?.isOccupied !== isOccupied) {
+              lotChanged = true;
+              updated = true;
+              return {
+                ...el,
+                properties: {
+                  ...props,
+                  isOccupied,
+                  lastDistance: lastData.distance,
+                  lastUpdated: lastData.timestamp,
+                },
+              };
+            }
+          }
+          return el;
+        });
+        if (lotChanged) {
+          const totalSpots = newLayout.filter(
+            (e) => e.elementType === "PARKING_SPACE"
+          ).length;
+          const availableSpots = newLayout.filter(
+            (e) =>
+              e.elementType === "PARKING_SPACE" &&
+              !(e.properties as Record<string, unknown>)?.isOccupied
+          ).length;
+          return {
+            ...lot,
+            layoutElements: newLayout,
+            totalSpots,
+            availableSpots,
+          };
+        }
+        return lot;
+      });
+      return updated ? newLots : prevLots;
+    });
+  }, [lastData]);
+
   const handleDeleteLot = async (id: string) => {
     if (!confirm("Delete this parking lot?")) return;
     await fetch(`/api/parking-lot?id=${id}`, { method: "DELETE" });
@@ -74,6 +133,7 @@ export default function AdminPage() {
     { id: "map", label: "Map Management", icon: MapPin },
     { id: "lots", label: "Parking Lots", icon: Building },
     { id: "iot", label: "IoT Devices", icon: Wifi },
+    { id: "admins", label: "Parking Lot Admins", icon: Shield },
     { id: "users", label: "Users", icon: Users },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "settings", label: "Settings", icon: Settings },
@@ -81,49 +141,43 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Building className="w-6 h-6 text-white" />
+      <div className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-40 ring-2 ring-blue-100/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-3 animate-fade-in">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-all duration-300">
+                <Building className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-800">
-                  Admin Dashboard
+                <h1 className="text-lg sm:text-xl font-brand gradient-text-primary tracking-tight drop-shadow-sm">
+                  Neopark Admin
                 </h1>
-                <p className="text-gray-600">Manage parking lots and layouts</p>
+                <p className="text-xs text-blue-500 font-body">
+                  Manage parking infrastructure
+                </p>
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-medium">
-                Desktop Only
-              </div>
-              <button className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-all duration-200">
-                <Settings className="w-5 h-5 text-gray-600" />
-              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white/60 backdrop-blur-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex space-x-1 py-4">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex space-x-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-200 font-medium ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-200 font-medium text-sm ${
                     activeTab === tab.id
-                      ? "bg-blue-500 text-white shadow-lg"
-                      : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-white/50 hover:shadow-md"
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span>{tab.label}</span>
+                  <Icon className="w-4 h-4" />
+                  <span className="font-body">{tab.label}</span>
                 </button>
               );
             })}
@@ -142,23 +196,31 @@ export default function AdminPage() {
           {activeTab === "lots" && (
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Parking Lots
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-display gradient-text-primary tracking-tight">
+                    Parking Lots
+                  </h2>
+                  <p className="text-sm text-gray-600 font-body mt-1">
+                    Manage your parking infrastructure
+                  </p>
+                </div>
               </div>
               {loadingLots ? (
-                <div className="text-center py-12 text-gray-500">
-                  Loading...
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <span className="ml-4 text-blue-500 font-body">
+                    Loading parking lots...
+                  </span>
                 </div>
               ) : parkingLots.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                     <Building className="w-10 h-10 text-gray-400" />
                   </div>
-                  <p className="text-gray-500 text-lg font-medium mb-2">
+                  <p className="text-gray-500 text-lg font-medium mb-2 font-display">
                     No parking lots yet
                   </p>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-gray-400 text-sm font-body">
                     Create your first parking lot using the map interface
                   </p>
                 </div>
@@ -167,48 +229,72 @@ export default function AdminPage() {
                   {parkingLots.map((lot) => (
                     <div
                       key={lot.id}
-                      className="flex items-center justify-between bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200 p-6 shadow-sm"
+                      className="relative bg-white/70 backdrop-blur-xl border border-blue-100 rounded-2xl p-6 text-left hover:border-blue-400 hover:shadow-2xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg flex flex-col gap-3 ring-1 ring-blue-100/20 before:absolute before:inset-y-4 before:left-0 before:w-1 before:rounded-full before:bg-gradient-to-b before:from-blue-400 before:to-green-400"
                     >
-                      <div>
-                        <div className="font-semibold text-gray-800 text-lg">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-300 rounded-xl flex items-center justify-center shadow-md">
+                          <Building className="w-6 h-6 text-blue-500" />
+                        </div>
+                        <h4 className="font-display text-xl text-blue-900 tracking-tight">
                           {lot.name}
+                        </h4>
+                        <div className="ml-auto px-3 py-1 rounded-full text-xs font-brand shadow  border bg-green-100 text-green-800 flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                          Active
                         </div>
-                        <div className="text-gray-500 text-sm">
-                          {lot.address}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
+                      </div>
+                      <div className="text-gray-500 text-sm font-body mb-1">
+                        {lot.address}
+                      </div>
+                      {lot.description && (
+                        <div className="text-gray-400 text-xs font-body mb-2">
                           {lot.description}
                         </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-body">
+                          <span className="font-bold text-blue-700">
+                            {lot.availableSpots}
+                          </span>
+                          <span className="mx-1 text-gray-400">/</span>
+                          <span className="font-bold text-gray-700">
+                            {lot.totalSpots}
+                          </span>
+                          spots available
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleOpenIoTManager(lot)}
+                            className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 text-xs font-semibold flex items-center shadow-md transition-all duration-200 hover:scale-105"
+                          >
+                            <Wifi className="w-3 h-3 mr-1" />
+                            IoT
+                          </button>
+                          <button
+                            onClick={() => handleParkingLayoutCreate(lot.id)}
+                            className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 text-xs font-semibold shadow-md transition-all duration-200 hover:scale-105"
+                          >
+                            Layout
+                          </button>
+                          <button
+                            onClick={() => {
+                              /* TODO: Edit logic */
+                            }}
+                            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200 hover:scale-105"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteLot(lot.id)}
+                            className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-200 hover:scale-105"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleOpenIoTManager(lot)}
-                          className="px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 text-sm font-semibold flex items-center"
-                        >
-                          <Wifi className="w-4 h-4 mr-1" />
-                          IoT
-                        </button>
-                        <button
-                          onClick={() => handleParkingLayoutCreate(lot.id)}
-                          className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 text-sm font-semibold"
-                        >
-                          Layout
-                        </button>
-                        <button
-                          onClick={() => {
-                            /* TODO: Edit logic */
-                          }}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteLot(lot.id)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-200"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <span className="absolute right-4 bottom-4 text-blue-400 text-lg font-bold opacity-60">
+                        ›
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -219,23 +305,31 @@ export default function AdminPage() {
           {activeTab === "iot" && (
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-                  <Wifi className="w-6 h-6 mr-2 text-purple-500" />
-                  IoT Device Management
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-display gradient-text-primary tracking-tight flex items-center">
+                    <Wifi className="w-6 h-6 mr-2 text-purple-500" />
+                    IoT Device Management
+                  </h2>
+                  <p className="text-sm text-gray-600 font-body mt-1">
+                    Assign and monitor IoT sensors
+                  </p>
+                </div>
               </div>
 
               {loadingLots ? (
-                <div className="text-center py-12 text-gray-500">
-                  Loading...
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <span className="ml-4 text-blue-500 font-body">
+                    Loading parking lots...
+                  </span>
                 </div>
               ) : parkingLots.length === 0 ? (
                 <div className="text-center py-12">
                   <Wifi className="w-20 h-20 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg font-medium mb-2">
+                  <p className="text-gray-500 text-lg font-medium mb-2 font-display">
                     No parking lots available
                   </p>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-gray-400 text-sm font-body">
                     Create parking lots first to manage IoT devices
                   </p>
                 </div>
@@ -244,31 +338,41 @@ export default function AdminPage() {
                   {parkingLots.map((lot) => (
                     <div
                       key={lot.id}
-                      className="flex items-center justify-between bg-gradient-to-r from-gray-50 to-purple-50 rounded-xl border border-gray-200 p-6 shadow-sm"
+                      className="relative bg-white/70 backdrop-blur-xl border border-purple-100 rounded-2xl p-6 text-left hover:border-purple-400 hover:shadow-2xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg flex flex-col gap-3 ring-1 ring-purple-100/20 before:absolute before:inset-y-4 before:left-0 before:w-1 before:rounded-full before:bg-gradient-to-b before:from-purple-400 before:to-pink-400"
                     >
-                      <div>
-                        <div className="font-semibold text-gray-800 text-lg">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-300 rounded-xl flex items-center justify-center shadow-md">
+                          <Wifi className="w-6 h-6 text-purple-500" />
+                        </div>
+                        <h4 className="font-display text-xl text-purple-900 tracking-tight">
                           {lot.name}
-                        </div>
-                        <div className="text-gray-500 text-sm">
-                          {lot.address}
-                        </div>
-                        <div className="flex items-center space-x-4 mt-2 text-xs">
-                          <span className="text-gray-500">
-                            {lot.totalSpots} parking spaces
-                          </span>
-                          <span className="text-purple-600 font-medium">
-                            IoT devices can be assigned here
-                          </span>
+                        </h4>
+                        <div className="ml-auto px-3 py-1 rounded-full text-xs font-brand shadow  border bg-purple-100 text-purple-800 flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                          IoT Ready
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleOpenIoTManager(lot)}
-                        className="px-6 py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 text-sm font-semibold flex items-center shadow-lg"
-                      >
-                        <Wifi className="w-4 h-4 mr-2" />
-                        Manage IoT Devices
-                      </button>
+                      <div className="text-gray-500 text-sm font-body mb-1">
+                        {lot.address}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-body">
+                          <span className="font-bold text-purple-700">
+                            {lot.totalSpots}
+                          </span>
+                          parking spaces available for IoT assignment
+                        </span>
+                        <button
+                          onClick={() => handleOpenIoTManager(lot)}
+                          className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 text-sm font-semibold flex items-center shadow-lg transition-all duration-200 hover:scale-105"
+                        >
+                          <Wifi className="w-4 h-4 mr-2" />
+                          Manage IoT Devices
+                        </button>
+                      </div>
+                      <span className="absolute right-4 bottom-4 text-purple-400 text-lg font-bold opacity-60">
+                        ›
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -276,34 +380,115 @@ export default function AdminPage() {
             </div>
           )}
 
+          {activeTab === "admins" && (
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-display gradient-text-primary tracking-tight flex items-center">
+                    <Shield className="w-6 h-6 mr-2 text-orange-500" />
+                    Parking Lot Admins
+                  </h2>
+                  <p className="text-sm text-gray-600 font-body mt-1">
+                    Manage admin permissions for parking lots
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Shield className="w-10 h-10 text-orange-500" />
+                </div>
+                <p className="text-gray-500 text-lg font-medium mb-2 font-display">
+                  Coming Soon
+                </p>
+                <p className="text-gray-400 text-sm font-body">
+                  Admin management features will be available in a future update
+                </p>
+              </div>
+            </div>
+          )}
+
           {activeTab === "users" && (
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-8">
-                User Management
-              </h2>
-              <p className="text-gray-600">
-                User management interface coming soon...
-              </p>
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-display gradient-text-primary tracking-tight flex items-center">
+                    <Users className="w-6 h-6 mr-2 text-blue-500" />
+                    User Management
+                  </h2>
+                  <p className="text-sm text-gray-600 font-body mt-1">
+                    Manage user accounts and permissions
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Users className="w-10 h-10 text-blue-500" />
+                </div>
+                <p className="text-gray-500 text-lg font-medium mb-2 font-display">
+                  Coming Soon
+                </p>
+                <p className="text-gray-400 text-sm font-body">
+                  User management features will be available in a future update
+                </p>
+              </div>
             </div>
           )}
 
           {activeTab === "analytics" && (
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-8">
-                Analytics
-              </h2>
-              <p className="text-gray-600">
-                Analytics dashboard coming soon...
-              </p>
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-display gradient-text-primary tracking-tight flex items-center">
+                    <BarChart3 className="w-6 h-6 mr-2 text-green-500" />
+                    Analytics
+                  </h2>
+                  <p className="text-sm text-gray-600 font-body mt-1">
+                    View parking analytics and insights
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <BarChart3 className="w-10 h-10 text-green-500" />
+                </div>
+                <p className="text-gray-500 text-lg font-medium mb-2 font-display">
+                  Coming Soon
+                </p>
+                <p className="text-gray-400 text-sm font-body">
+                  Analytics dashboard will be available in a future update
+                </p>
+              </div>
             </div>
           )}
 
           {activeTab === "settings" && (
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-8">
-                Settings
-              </h2>
-              <p className="text-gray-600">Admin settings coming soon...</p>
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-display gradient-text-primary tracking-tight flex items-center">
+                    <Settings className="w-6 h-6 mr-2 text-gray-500" />
+                    Settings
+                  </h2>
+                  <p className="text-sm text-gray-600 font-body mt-1">
+                    Configure admin system settings
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Settings className="w-10 h-10 text-gray-500" />
+                </div>
+                <p className="text-gray-500 text-lg font-medium mb-2 font-display">
+                  Coming Soon
+                </p>
+                <p className="text-gray-400 text-sm font-body">
+                  Admin settings will be available in a future update
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -374,6 +559,35 @@ export default function AdminPage() {
           onClose={handleCloseIoTManager}
         />
       )}
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(40px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.6s ease-out;
+        }
+        .animate-fade-in-up {
+          animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+      `}</style>
     </div>
   );
 }

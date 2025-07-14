@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { ChevronDown, MapPin, Car } from "lucide-react";
+import { ChevronDown, Car } from "lucide-react";
 import { ParkingLot } from "@/constants/types/parking";
 import { motion, useMotionValue, animate } from "framer-motion";
 
@@ -11,7 +11,7 @@ interface ParkingLotsSheetProps {
   isLoading?: boolean;
 }
 
-const SNAP_POINTS = [0.15, 0.5, 0.92]; // collapsed, mid, expanded (percent of viewport height)
+const SNAP_POINTS = [0.15, 0.5, 0.92];
 
 export default function ParkingLotsSheet({
   parkingLots,
@@ -19,17 +19,15 @@ export default function ParkingLotsSheet({
   isLoading = false,
 }: ParkingLotsSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
-  const [snapIndex, setSnapIndex] = useState(1); // start at mid
+  const [snapIndex, setSnapIndex] = useState(1);
   const y = useMotionValue(0);
   const [viewportHeight, setViewportHeight] = useState(0);
 
-  // Calculate snap positions in px
   const getSnapPositions = () => {
     const vh = viewportHeight || window.innerHeight;
     return SNAP_POINTS.map((p) => vh * (1 - p));
   };
 
-  // Set initial position on mount
   React.useEffect(() => {
     setViewportHeight(window.innerHeight);
     const onResize = () => setViewportHeight(window.innerHeight);
@@ -42,11 +40,9 @@ export default function ParkingLotsSheet({
     y.set(snapPositions[snapIndex]);
   }, [viewportHeight, snapIndex]);
 
-  // Drag logic
   const handleDragEnd = (_e: unknown, info: { point: { y: number } }) => {
     const snapPositions = getSnapPositions();
     const current = info.point.y;
-    // Find the closest snap point
     let closest = 0;
     let minDist = Math.abs(current - snapPositions[0]);
     for (let i = 1; i < snapPositions.length; i++) {
@@ -103,14 +99,22 @@ export default function ParkingLotsSheet({
       initial={false}
       transition={{ type: "spring", stiffness: 400, damping: 40 }}
     >
-      <div className="bg-white/95 backdrop-blur-md rounded-t-3xl shadow-2xl border border-blue-100 h-[92vh] flex flex-col">
-        <div className="flex justify-center pt-4 pb-3 cursor-grab active:cursor-grabbing">
-          <div className="w-16 h-1.5 bg-blue-200 rounded-full hover:bg-blue-300 transition-colors duration-200"></div>
+      <div className="bg-white/80 backdrop-blur-lg rounded-t-3xl shadow-2xl border border-blue-100 h-[92vh] flex flex-col ring-2 ring-blue-100/30">
+        <div className="flex flex-col items-center justify-center pt-4 pb-3 cursor-grab active:cursor-grabbing">
+          <div className="w-16 h-1.5 bg-gradient-to-r from-blue-200 to-green-200 rounded-full hover:bg-blue-300 transition-colors duration-200 shadow-md"></div>
+          <div className="flex items-center mt-2 space-x-2">
+            <Car className="w-7 h-7 text-blue-500 drop-shadow-md" />
+            <span className="text-xl font-extrabold text-blue-700 tracking-tight drop-shadow-sm">
+              Neopark
+            </span>
+          </div>
         </div>
         <div className="px-6 pb-6 border-b border-blue-100">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h3 className="text-2xl font-bold text-gray-800">Parking Lots</h3>
+              <h3 className="text-2xl font-display gradient-text-primary text-shadow-sm">
+                Parking Lots
+              </h3>
             </div>
             <button
               className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all duration-200"
@@ -126,52 +130,60 @@ export default function ParkingLotsSheet({
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <span className="ml-4 text-blue-500 font-medium">
+              <span className="ml-4 text-blue-500 font-body">
                 Loading parking lots...
               </span>
             </div>
           ) : (
             <div className="p-6">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {parkingLots.map((lot) => (
                   <button
                     key={lot.id}
                     onClick={() => onLotSelect(lot)}
-                    className="w-full bg-white border border-gray-200 rounded-2xl p-4 text-left hover:border-blue-300 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full relative bg-white/70 backdrop-blur-xl border border-blue-100 rounded-2xl p-6 text-left hover:border-blue-400 hover:shadow-2xl transition-all duration-200 hover:scale-[1.04] active:scale-[0.98] shadow-lg flex flex-col gap-3 ring-1 ring-blue-100/20 before:absolute before:inset-y-4 before:left-0 before:w-1 before:rounded-full before:bg-gradient-to-b before:from-blue-400 before:to-green-400"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h4 className="font-semibold text-gray-800">
-                            {lot.name}
-                          </h4>
-                          <div
-                            className={`px-2 py-1 rounded-full text-xs font-semibold ${getAvailabilityBadge(
-                              lot
-                            )}`}
-                          >
-                            {getAvailabilityText(lot)}
-                          </div>
-                        </div>
-                        <div className="flex items-center text-gray-600 text-sm mb-2">
-                          <MapPin className="w-4 h-4 mr-1 text-blue-500" />
-                          <span className="truncate">{lot.address}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500">
-                            {lot.availableSpots}/{lot.totalSpots} spots
-                          </span>
-                          <span
-                            className={`text-sm font-semibold ${getAvailabilityColor(
-                              lot
-                            )}`}
-                          >
-                            {getAvailabilityText(lot)}
-                          </span>
-                        </div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-300 rounded-xl flex items-center justify-center shadow-md">
+                        <Car className="w-6 h-6 text-blue-500" />
                       </div>
-                      <Car className="w-6 h-6 text-blue-500 ml-3" />
+                      <h4 className="font-display text-xl text-blue-900 tracking-tight">
+                        {lot.name}
+                      </h4>
+                      <div
+                        className={`ml-auto px-3 py-1 rounded-full text-xs font-brand shadow bg-white/60 border ${getAvailabilityBadge(
+                          lot
+                        )} flex items-center gap-1`}
+                      >
+                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                        {getAvailabilityText(lot)}
+                      </div>
                     </div>
+                    <div className="text-gray-500 text-sm font-body mb-1">
+                      {lot.address}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-body">
+                        <span className="font-bold text-blue-700">
+                          {lot.availableSpots}
+                        </span>
+                        <span className="mx-1 text-gray-400">/</span>
+                        <span className="font-bold text-gray-700">
+                          {lot.totalSpots}
+                        </span>
+                        <span className="ml-2">spots</span>
+                      </span>
+                      <span
+                        className={`text-sm font-brand ${getAvailabilityColor(
+                          lot
+                        )}`}
+                      >
+                        {getAvailabilityText(lot)}
+                      </span>
+                    </div>
+                    <span className="absolute right-4 bottom-4 text-blue-400 text-lg font-bold opacity-60">
+                      ›
+                    </span>
                   </button>
                 ))}
               </div>

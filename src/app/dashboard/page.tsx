@@ -6,6 +6,7 @@ import Map from "@/components/dashboard/Map";
 import LayoutPreview from "@/components/dashboard/LayoutPreview";
 import { ParkingLot } from "@/constants/types/parking";
 import ParkingLotsSheet from "@/components/dashboard/ParkingLotsSheet";
+import useWebsocketNeo from "@/hooks/useWebsocketNeo";
 
 export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   );
   const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { lastData } = useWebsocketNeo();
 
   useEffect(() => {
     const loadParkingLots = async () => {
@@ -36,6 +38,62 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (!lastData) return;
+    setParkingLots((prevLots) => {
+      let updated = false;
+      const newLots = prevLots.map((lot) => {
+        if (!lot.layoutElements || !Array.isArray(lot.layoutElements))
+          return lot;
+        let lotChanged = false;
+        const newLayout = lot.layoutElements.map((el) => {
+          if (
+            el.elementType === "PARKING_SPACE" &&
+            (el.properties as Record<string, unknown>)?.deviceId ===
+              lastData.deviceId
+          ) {
+            const props = el.properties as Record<string, unknown>;
+            const threshold = (props?.sensorThreshold as number) ?? 50;
+            const isOccupied =
+              lastData.distance > 0 && lastData.distance < threshold;
+            if (props?.isOccupied !== isOccupied) {
+              lotChanged = true;
+              updated = true;
+              return {
+                ...el,
+                properties: {
+                  ...props,
+                  isOccupied,
+                  lastDistance: lastData.distance,
+                  lastUpdated: lastData.timestamp,
+                },
+              };
+            }
+          }
+          return el;
+        });
+        if (lotChanged) {
+          const totalSpots = newLayout.filter(
+            (e) => e.elementType === "PARKING_SPACE"
+          ).length;
+          const availableSpots = newLayout.filter(
+            (e) =>
+              e.elementType === "PARKING_SPACE" &&
+              !(e.properties as Record<string, unknown>)?.isOccupied
+          ).length;
+          return {
+            ...lot,
+            layoutElements: newLayout,
+            totalSpots,
+            availableSpots,
+          };
+        }
+        return lot;
+      });
+      return updated ? newLots : prevLots;
+    });
+  }, [lastData]);
+
   const filteredLots = parkingLots.filter(
     (lot) =>
       lot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -56,7 +114,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-40">
+      <div className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-40 ring-2 ring-blue-100/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3 animate-fade-in">
@@ -64,21 +122,12 @@ export default function DashboardPage() {
                 <Car className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gray-800">
+                <h1 className="text-lg sm:text-xl font-brand gradient-text-primary tracking-tight drop-shadow-sm">
                   Neopark
                 </h1>
-                <p className="text-xs text-gray-600">Find parking near you</p>
-              </div>
-            </div>
-
-            <div className="hidden md:flex items-center space-x-6 text-sm">
-              <div className="text-center">
-                <div className="text-lg font-bold text-green-600">24</div>
-                <div className="text-xs text-gray-600">Available</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-blue-600">8</div>
-                <div className="text-xs text-gray-600">Lots</div>
+                <p className="text-xs text-blue-500 font-body">
+                  Find parking near you
+                </p>
               </div>
             </div>
           </div>

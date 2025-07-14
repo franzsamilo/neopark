@@ -15,6 +15,7 @@ import {
   Trash2,
   Square,
   RotateCw,
+  X,
 } from "lucide-react";
 import { ParkingLot, LayoutElement, Size } from "@/constants/types/parking";
 import { SpotType, LayoutElementType } from "@/constants/enums/parking";
@@ -49,6 +50,9 @@ function CreateParkingLayoutContent() {
   const [copiedElement, setCopiedElement] = useState<LayoutElement | null>(
     null
   );
+
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [isSavingAndClosing, setIsSavingAndClosing] = useState(false);
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -272,7 +276,7 @@ function CreateParkingLayoutContent() {
 
       const angle =
         (Math.atan2(mouseY - centerY, mouseX - centerX) * 180) / Math.PI;
-      const snappedAngle = Math.round(angle / 15) * 15; // Snap to 15-degree increments
+      const snappedAngle = Math.round(angle / 15) * 15;
 
       const updatedElement = {
         ...selectedElement,
@@ -468,8 +472,6 @@ function CreateParkingLayoutContent() {
             availableSpots: availableSpaces,
           }),
         });
-
-        alert("Layout saved successfully!");
       } else {
         alert("Failed to save layout");
       }
@@ -548,16 +550,13 @@ function CreateParkingLayoutContent() {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-100 via-white to-indigo-100 flex flex-col">
       <div className="flex flex-col md:flex-row gap-6 p-4 md:p-8">
-        {/* Left Panel: Tools & Properties */}
         <motion.div
           initial={{ x: -40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 30 }}
           className="w-full md:w-80 bg-white/80 backdrop-blur-2xl rounded-2xl shadow-xl border border-blue-100 p-6 flex flex-col gap-6 mb-4 md:mb-0"
         >
-          {/* Toolbar */}
           <div className="flex flex-wrap gap-2 mb-4">
-            {/* Tool buttons with icons, tooltips, and active state */}
             {tools.map((tool) => {
               const Icon = tool.icon;
               return (
@@ -574,7 +573,6 @@ function CreateParkingLayoutContent() {
               );
             })}
           </div>
-          {/* Undo/Redo/Save */}
           <div className="flex gap-2 mb-4">
             <button
               className="p-2 rounded-lg bg-white shadow hover:bg-blue-50 transition-all"
@@ -598,7 +596,6 @@ function CreateParkingLayoutContent() {
               <Save />
             </button>
           </div>
-          {/* Properties Panel (for selected element) */}
           {selectedElement && (
             <div className="bg-white/90 rounded-xl p-4 shadow border border-blue-50">
               <h4 className="font-semibold text-blue-700 mb-2">
@@ -701,7 +698,6 @@ function CreateParkingLayoutContent() {
               </div>
             </div>
           )}
-          {/* Stats & Tips (as before, but glassy) */}
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-3">
               Statistics
@@ -748,13 +744,19 @@ function CreateParkingLayoutContent() {
             </ul>
           </div>
         </motion.div>
-        {/* Right Panel: Canvas */}
         <motion.div
           initial={{ x: 40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 30 }}
           className="flex-1 bg-white/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-blue-100 h-[80vh] overflow-hidden relative"
         >
+          <button
+            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/80 hover:bg-red-100 border border-red-200 shadow text-red-500 transition-all"
+            title="Close editor"
+            onClick={() => setShowCloseModal(true)}
+          >
+            <X className="w-6 h-6" />
+          </button>
           <div
             ref={canvasRef}
             className="relative w-full h-full grid-bg cursor-crosshair select-none"
@@ -850,6 +852,76 @@ function CreateParkingLayoutContent() {
               }
             `}</style>
           </div>
+          {showCloseModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in">
+              <div className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border-2 border-blue-200/60 p-8 max-w-sm w-full flex flex-col items-center relative animate-scale-in">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full p-3 shadow-lg">
+                  <Save className="w-7 h-7 text-white drop-shadow" />
+                </div>
+                <div className="mt-8 mb-2 text-2xl font-bold text-blue-700 text-center font-display drop-shadow-sm">
+                  Save and Exit?
+                </div>
+                <div className="mb-6 text-gray-600 text-center font-body text-base">
+                  Your layout will be saved on close. Proceed?
+                </div>
+                <div className="flex gap-4 w-full justify-center mt-2">
+                  <button
+                    className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-base disabled:opacity-60"
+                    disabled={isSavingAndClosing}
+                    onClick={async () => {
+                      setIsSavingAndClosing(true);
+                      await handleSave();
+                      setIsSavingAndClosing(false);
+                      setShowCloseModal(false);
+                      router.push("/admin");
+                    }}
+                  >
+                    {isSavingAndClosing ? (
+                      <span className="flex items-center gap-2">
+                        <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+                        Saving...
+                      </span>
+                    ) : (
+                      "Yes, Save & Exit"
+                    )}
+                  </button>
+                  <button
+                    className="flex-1 px-4 py-2 rounded-xl bg-white/80 border border-blue-200 text-blue-700 font-semibold hover:bg-blue-50 transition-all duration-200 shadow focus:outline-none focus:ring-2 focus:ring-blue-200 text-base"
+                    onClick={() => setShowCloseModal(false)}
+                    disabled={isSavingAndClosing}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+              <style jsx>{`
+                .animate-fade-in {
+                  animation: fade-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+                }
+                .animate-scale-in {
+                  animation: scale-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+                }
+                @keyframes fade-in {
+                  from {
+                    opacity: 0;
+                  }
+                  to {
+                    opacity: 1;
+                  }
+                }
+                @keyframes scale-in {
+                  from {
+                    opacity: 0;
+                    transform: scale(0.95);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: scale(1);
+                  }
+                }
+              `}</style>
+            </div>
+          )}
         </motion.div>
       </div>
     </div>
