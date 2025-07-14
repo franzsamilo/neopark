@@ -1,12 +1,21 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Car, Search } from "lucide-react";
+import {
+  Car,
+  Search,
+  Menu,
+  User,
+  Settings as SettingsIcon,
+  Building,
+  LogOut,
+} from "lucide-react";
 import Map from "@/components/dashboard/Map";
 import LayoutPreview from "@/components/dashboard/LayoutPreview";
 import { ParkingLot } from "@/constants/types/parking";
 import ParkingLotsSheet from "@/components/dashboard/ParkingLotsSheet";
 import useWebsocketNeo from "@/hooks/useWebsocketNeo";
+import { signOut } from "next-auth/react";
 
 export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,6 +25,7 @@ export default function DashboardPage() {
   );
   const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showMenu, setShowMenu] = useState(false);
   const { lastData } = useWebsocketNeo();
 
   useEffect(() => {
@@ -129,6 +139,39 @@ export default function DashboardPage() {
                   Find parking near you
                 </p>
               </div>
+            </div>
+            {/* Hamburger Menu */}
+            <div className="relative">
+              <button
+                className="p-2 rounded-full hover:bg-blue-100 transition-all"
+                onClick={() => setShowMenu((prev) => !prev)}
+                aria-label="Open menu"
+              >
+                <Menu className="w-6 h-6 text-blue-600" />
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-gradient-to-br from-blue-50 via-white to-blue-100/80 rounded-2xl shadow-2xl border border-blue-100/60 ring-2 ring-blue-100/30 backdrop-blur-xl z-50 animate-fade-in-up">
+                  <button className="flex items-center w-full px-5 py-4 gap-3 hover:bg-blue-100/60 active:scale-[0.98] transition-all rounded-t-2xl font-display text-blue-900 text-base">
+                    <User className="w-5 h-5 text-blue-500" />
+                    Profile
+                  </button>
+                  <button className="flex items-center w-full px-5 py-4 gap-3 hover:bg-blue-100/60 active:scale-[0.98] transition-all font-display text-blue-900 text-base">
+                    <SettingsIcon className="w-5 h-5 text-blue-500" />
+                    Settings
+                  </button>
+                  <button className="flex items-center w-full px-5 py-4 gap-3 hover:bg-blue-100/60 active:scale-[0.98] transition-all font-display text-blue-900 text-base">
+                    <Building className="w-5 h-5 text-blue-500" />
+                    Manage Lot
+                  </button>
+                  <button
+                    className="flex items-center w-full px-5 py-4 gap-3 hover:bg-red-100/70 active:scale-[0.98] transition-all rounded-b-2xl font-display text-red-600 text-base border-t border-blue-100/40"
+                    onClick={() => signOut()}
+                  >
+                    <LogOut className="w-5 h-5 text-red-500" />
+                    Log Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
